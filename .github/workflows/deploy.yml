@@ -15,6 +15,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: | # Use the pipe | to run multiple commands
-          cd ~/app/safe-space-app
+          cd ~/app/safespace/
           #cp ./env.production ./env
           echo "Commands executed successfully!"
