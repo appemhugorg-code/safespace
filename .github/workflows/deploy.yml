@@ -1,7 +1,7 @@
 name: Remote update execution
 
 on: [push] # This workflow runs on every push to the repository
-
+workflow_dispatch: # Allows manual runs
 jobs:
   build:
     runs-on: ubuntu-latest
