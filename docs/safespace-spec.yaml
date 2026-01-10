@@ -1,0 +1,186 @@
+
+app:
+  name: SafeSpace
+  description: >
+    SafeSpace is a mental health management platform for children, parents/guardians,
+    and therapists. It helps track emotional wellbeing, manage therapy appointments,
+    and maintain parent-child engagement under administrative oversight.
+  stack:
+    backend: Laravel 12
+    frontend: React + ShadCN UI + TailwindCSS
+    language: PHP 8.3 + TypeScript
+  database: SQLite
+
+roles:
+  - name: admin
+    description: Full system access; can approve users, manage accounts, and moderate content.
+    permissions:
+      - approve_users
+      - view_reports
+      - manage_users
+      - manage_appointments
+      - manage_articles
+      - manage_settings
+
+  - name: therapist
+    description: Manages therapy sessions and patient progress.
+    permissions:
+      - view_assigned_children
+      - create_appointments
+      - view_mood_reports
+      - post_articles
+      - chat_with_guardians
+      - chat_with_children
+
+  - name: guardian
+    description: Registers children, monitors progress, and communicates with therapists.
+    permissions:
+      - register_child
+      - view_child_progress
+      - request_appointments
+      - chat_with_therapist
+      - receive_alerts
+
+  - name: child
+    description: Interacts with mood tracking, games, and exercises.
+    permissions:
+      - record_mood
+      - play_games
+      - read_articles
+      - chat_with_therapist
+
+models:
+  User:
+    fields:
+      - id: integer, primary
+      - name: string
+      - email: string, unique
+      - password: string
+      - status: enum[pending, active, suspended]
+      - role: relation -> Role
+      - parent_id: foreignId -> User (nullable, only for children)
+    relations:
+      - hasMany: Appointment
+      - hasMany: MoodLog
+
+  MoodLog:
+    fields:
+      - id: integer, primary
+      - user_id: foreignId -> User
+      - mood: enum[happy, sad, angry, calm, excited, scared]
+      - note: text (nullable)
+      - created_at: timestamp
+    relations:
+      - belongsTo: User
+
+  Appointment:
+    fields:
+      - id: integer, primary
+      - therapist_id: foreignId -> User
+      - child_id: foreignId -> User
+      - scheduled_at: datetime
+      - status: enum[pending, approved, completed, cancelled]
+    relations:
+      - belongsTo: Therapist (User)
+      - belongsTo: Child (User)
+
+  Article:
+    fields:
+      - id: integer, primary
+      - title: string
+      - body: text
+      - author_id: foreignId -> User
+      - published_at: timestamp
+    relations:
+      - belongsTo: User
+
+auth:
+  registration:
+    allowed_roles: [guardian, therapist]
+    default_status: pending
+    requires_admin_approval: true
+
+  login:
+    all_roles: true
+    redirect_rules:
+      - admin -> /admin/dashboard
+      - therapist -> /therapist/dashboard
+      - guardian -> /guardian/dashboard
+      - child -> /child/dashboard
+
+  child_creation:
+    allowed_by: [guardian, admin]
+    default_status: pending
+    approval_required: true
+
+dashboards:
+  admin:
+    components:
+      - PendingUsersTable
+      - ApprovalActions
+      - ReportsOverview
+      - UserManagementPanel
+
+  therapist:
+    components:
+      - SessionSchedule
+      - AssignedChildrenList
+      - MoodTrendsGraph
+      - ChatPanel
+
+  guardian:
+    components:
+      - ChildOverviewCards
+      - AddChildForm
+      - MoodHistoryGraph
+      - AppointmentRequests
+      - TherapistChatPanel
+
+  child:
+    components:
+      - MoodSelector
+      - DailyMoodChart
+      - GameSection
+      - EncouragementMessages
+      - PanicButton
+
+features:
+  chat:
+    providers: Pusher or Laravel Reverb
+    moderation:
+      - allow admin to view flagged messages
+      - report_abuse endpoint available
+  appointments:
+      - children, therapists and guardians should be able to shedule appointments
+      - Both children and therapists should have a calendar showing up comming therapy appointments/sessions
+      - Video sessions will happen using Google Meets but managed through the application
+
+future_features:
+  - gamified_exercises:
+      - name: breathing_buddy
+      - type: guided breathing exercise
+      - rewards: badges, streaks
+  - achievements:
+      - earned after daily mood tracking
+      - badges shown in child dashboard
+  - panic_button:
+      - visible only to children
+      - triggers guardian + therapist alert
+
+admin_panel:
+  sections:
+    - Approvals: view and approve pending users
+    - Users: manage guardians, therapists, children
+    - Reports: system usage and mood trends
+    - Settings: global configuration
+
+ai_assistants:
+  - Mood Insight Agent:
+      input: mood logs
+      output: friendly emotional summaries
+  - Therapy Companion:
+      input: child chats and progress
+      output: encouragement and coping tips
+  - Guardian Guide:
+      input: child’s data
+      output: guidance suggestions

@@ -1,0 +1,1 @@
+export { UserPreferencesManager } from './user-preferences-manager';

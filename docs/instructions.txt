@@ -1,0 +1,44 @@
+Use the provided files:
+
+- docs/safespace-spec.yaml
+
+- docs/SafeSpace-UseCases.pdf
+
+Analyze both documents to understand system structure (from the YAML spec)
+
+and user flows (from the PDF scenarios).  
+
+Build on the existing Laravel + React + ShadCN + spatie/permissions for roles:
+
+1. Authentication & onboarding flows:
+
+   - Guardians & Therapists register with "pending" status.
+
+   - Admin approves accounts.
+
+   - Guardians can create child accounts (pending admin approval).
+
+2. Dashboards:
+
+   - Role-specific dashboards for Admin, Therapist, Guardian, and Child.
+
+3. API:
+
+   - Endpoints as listed in the spec, consistent with user actions described in the PDF.
+
+4. Frontend routes:
+
+   - Each role is redirected to its dashboard after login.
+
+Ensure routes, controllers, and views align with the workflows and emotional design in the scenarios.
+
+5. A nice landing page to welcome and easily show and tell about the app and how they can proceed is important.
+  
+  - For an example use link https://ea90407e-104c-49e1-9d74-60fb0abee5a8-00-156hyf0urzaut.picard.replit.dev/ and also see the screenshots in the "docs/screenshots" folder
+  
+  - Be creative about the landing page.
+  
+ 
+** VERY IMPORTANT **
+
+Before writing any code. Make a plan that we can follow to build a minimal viable product after analysing the product specification that has been provided.
