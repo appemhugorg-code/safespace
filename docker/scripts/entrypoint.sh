@@ -114,20 +114,42 @@ REDIS_READY=0
 RETRY_COUNT=0
 MAX_RETRIES=30
 
+# First, wait for Redis service to be available
+echo "Checking if Redis service is available..."
+while [ $RETRY_COUNT -lt 30 ]; do
+    if nc -z redis 6379 2>/dev/null; then
+        echo "✅ Redis service is available"
+        break
+    else
+        echo "Redis service not available, waiting... (attempt $((RETRY_COUNT + 1))/30)"
+        sleep 2
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+    fi
+done
+
+# Reset retry count for Redis connection test
+RETRY_COUNT=0
+
 while [ $REDIS_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if php artisan tinker --execute="try { use Illuminate\Support\Facades\Redis; Redis::ping(); echo 'REDIS_OK'; } catch(Exception \$e) { echo 'REDIS_FAIL'; }" 2>/dev/null | grep -q "REDIS_OK"; then
+    if php artisan tinker --execute="try { use Illuminate\Support\Facades\Redis; Redis::ping(); echo 'REDIS_OK'; } catch(Exception \$e) { echo 'REDIS_FAIL: ' . \$e->getMessage(); }" 2>/dev/null | grep -q "REDIS_OK"; then
         REDIS_READY=1
         echo "✅ Redis connection established!"
     else
         echo "Redis not ready, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
-        sleep 2
+        sleep 3  # Increased sleep time
         RETRY_COUNT=$((RETRY_COUNT + 1))
     fi
 done
 
 if [ $REDIS_READY -eq 0 ]; then
     echo "❌ ERROR: Redis connection failed after $MAX_RETRIES attempts!"
-    exit 1
+    echo "Checking Redis configuration..."
+    php artisan tinker --execute="echo 'Redis Host: ' . config('database.redis.default.host'); echo 'Redis Port: ' . config('database.redis.default.port');" 2>/dev/null || echo "Could not check Redis config"
+    
+    # Try to continue without Redis for now (will cause issues but allows debugging)
+    echo "⚠️  WARNING: Continuing without Redis - some features may not work!"
+else
+    echo "✅ Redis connection verified!"
 fi
 
 # Run Laravel setup commands

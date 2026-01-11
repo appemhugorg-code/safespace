@@ -22,6 +22,7 @@ RUN apk add --no-cache \
     npm \
     linux-headers \
     netcat-openbsd \
+    redis-cli \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo \
@@ -72,7 +73,8 @@ COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Copy entrypoint script
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY docker/scripts/check-redis.sh /usr/local/bin/check-redis.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/check-redis.sh
 
 # Create log directories and supervisor socket directory
 RUN mkdir -p /var/log/supervisor /run/supervisor \
