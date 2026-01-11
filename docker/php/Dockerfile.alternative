@@ -1,4 +1,16 @@
-# Production PHP container with Node.js for building assets
+# Multi-stage build for better reliability
+FROM composer:2 AS composer-stage
+
+# Copy composer files
+COPY composer.json composer.lock /app/
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies with unlimited memory
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-*
+
+# Production PHP container
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies including Node.js
@@ -45,21 +57,14 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better Docker layer caching
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies with increased memory limit
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --verbose --ignore-platform-req=ext-* \
-    && composer clear-cache
-
 # Copy application files
 COPY . .
 
-# Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
-# Use increased memory limit for npm install as well
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
+# Copy vendor from composer stage
+COPY --from=composer-stage /app/vendor ./vendor
 
-# Note: Frontend assets will be built in entrypoint.sh to ensure latest changes
+# Install Node.js dependencies
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
@@ -78,7 +83,7 @@ RUN mkdir -p /var/log/supervisor /run/supervisor \
     && chmod 755 /var/log/supervisor /run/supervisor \
     && chown -R www-data:www-data /var/log/supervisor
 
-# PHP-FPM configuration - minimal override to use port 9000
+# PHP-FPM configuration
 RUN sed -i 's/listen = 127.0.0.1:9000/listen = 9000/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/;catch_workers_output = yes/catch_workers_output = yes/' /usr/local/etc/php-fpm.d/www.conf
 
