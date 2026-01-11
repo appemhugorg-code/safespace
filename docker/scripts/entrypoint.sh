@@ -166,6 +166,23 @@ if [ "$APP_KEY" = "base64:GENERATE_NEW_KEY_FOR_PRODUCTION" ] || [ -z "$APP_KEY" 
     fi
 fi
 
+# Generate Reverb keys if not set
+if [ -z "$REVERB_APP_KEY" ] || [ "$REVERB_APP_KEY" = "your-reverb-app-key" ]; then
+    echo "Generating Reverb app key..."
+    REVERB_APP_KEY=$(openssl rand -hex 16)
+    echo "REVERB_APP_KEY=${REVERB_APP_KEY}" >> .env.production
+    export REVERB_APP_KEY
+    echo "✅ Reverb app key generated: ${REVERB_APP_KEY}"
+fi
+
+if [ -z "$REVERB_APP_SECRET" ] || [ "$REVERB_APP_SECRET" = "your-reverb-app-secret" ]; then
+    echo "Generating Reverb app secret..."
+    REVERB_APP_SECRET=$(openssl rand -hex 32)
+    echo "REVERB_APP_SECRET=${REVERB_APP_SECRET}" >> .env.production
+    export REVERB_APP_SECRET
+    echo "✅ Reverb app secret generated: ${REVERB_APP_SECRET}"
+fi
+
 # Publish Reverb configuration
 echo "Publishing Reverb configuration..."
 if php artisan vendor:publish --provider="Laravel\Reverb\ReverbServiceProvider" --force; then
@@ -276,7 +293,19 @@ echo "🎉 SafeSpace application setup completed successfully!"
 
 # Start Reverb server in the background for WebSocket support
 echo "Starting Reverb WebSocket server..."
-if php artisan reverb:start --host=0.0.0.0 --port=8080 &
+
+# Wait a bit for everything to be ready
+sleep 2
+
+# Test Reverb configuration first
+echo "Testing Reverb configuration..."
+if php artisan reverb:install --no-interaction 2>/dev/null; then
+    echo "✅ Reverb configuration verified"
+else
+    echo "⚠️  WARNING: Reverb configuration may have issues"
+fi
+
+if php artisan reverb:start --host=0.0.0.0 --port=8080 --no-interaction &
 then
     REVERB_PID=$!
     echo "✅ Reverb server started with PID: $REVERB_PID"
