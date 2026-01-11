@@ -605,8 +605,9 @@ class UATDataGeneratorCommand extends Command
     // Helper methods for message generation
     private function generateCheckInMessage(User $child, string $senderType): string
     {
+        $therapistName = $child->therapist->name ?? 'Johnson';
         $messages = [
-            "Hi Dr. {$child->therapist->name ?? 'Johnson'}, I wanted to check in about {$child->name}'s progress this week.",
+            "Hi Dr. {$therapistName}, I wanted to check in about {$child->name}'s progress this week.",
             "Hello, {$child->name} has been doing well at home. How are the sessions going?",
             "I noticed {$child->name} seems more confident lately. Is this something you're seeing too?",
             "Quick update on {$child->name} - they've been using the breathing techniques you taught them.",
