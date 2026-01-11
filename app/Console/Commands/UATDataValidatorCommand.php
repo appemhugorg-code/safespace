@@ -77,7 +77,7 @@ class UATDataValidatorCommand extends Command
             $user = User::where('email', $email)->first();
             
             if (!$user) {
-                $this->error("   ❌ Missing required user: {$email}");
+                $this->logError("   ❌ Missing required user: {$email}");
                 $this->errors++;
                 
                 if ($this->option('fix')) {
@@ -85,7 +85,7 @@ class UATDataValidatorCommand extends Command
                 }
             } else {
                 if (!$user->hasRole($expectedRole)) {
-                    $this->error("   ❌ User {$email} has incorrect role (expected: {$expectedRole})");
+                    $this->logError("   ❌ User {$email} has incorrect role (expected: {$expectedRole})");
                     $this->errors++;
                 }
                 
@@ -120,7 +120,7 @@ class UATDataValidatorCommand extends Command
             ->pluck('email');
 
         foreach ($duplicates as $email) {
-            $this->error("   ❌ Duplicate email found: {$email}");
+            $this->logError("   ❌ Duplicate email found: {$email}");
             $this->errors++;
         }
 
@@ -145,7 +145,7 @@ class UATDataValidatorCommand extends Command
             $count = User::role($role)->count();
             
             if ($count < $limits['min']) {
-                $this->error("   ❌ Too few {$role} users: {$count} (minimum: {$limits['min']})");
+                $this->logError("   ❌ Too few {$role} users: {$count} (minimum: {$limits['min']})");
                 $this->errors++;
             } elseif ($count > $limits['max']) {
                 $this->warn("   ⚠️  Many {$role} users: {$count} (maximum recommended: {$limits['max']})");
@@ -158,7 +158,7 @@ class UATDataValidatorCommand extends Command
         // Check for users without roles
         $usersWithoutRoles = User::whereDoesntHave('roles')->count();
         if ($usersWithoutRoles > 0) {
-            $this->error("   ❌ {$usersWithoutRoles} users without roles");
+            $this->logError("   ❌ {$usersWithoutRoles} users without roles");
             $this->errors++;
         }
 
@@ -178,7 +178,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($childrenWithoutGuardians > 0) {
-            $this->error("   ❌ {$childrenWithoutGuardians} children without guardians");
+            $this->logError("   ❌ {$childrenWithoutGuardians} children without guardians");
             $this->errors++;
         }
 
@@ -200,7 +200,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($childrenWithInvalidGuardians > 0) {
-            $this->error("   ❌ {$childrenWithInvalidGuardians} children with invalid guardian references");
+            $this->logError("   ❌ {$childrenWithInvalidGuardians} children with invalid guardian references");
             $this->errors++;
         }
 
@@ -252,7 +252,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($childrenWithInvalidTherapists > 0) {
-            $this->error("   ❌ {$childrenWithInvalidTherapists} children with invalid therapist references");
+            $this->logError("   ❌ {$childrenWithInvalidTherapists} children with invalid therapist references");
             $this->errors++;
         }
 
@@ -302,7 +302,7 @@ class UATDataValidatorCommand extends Command
                 ->count();
 
             if ($invalidMoods > 0) {
-                $this->error("   ❌ {$child->name} has {$invalidMoods} invalid mood values");
+                $this->logError("   ❌ {$child->name} has {$invalidMoods} invalid mood values");
                 $this->errors++;
             }
 
@@ -312,7 +312,7 @@ class UATDataValidatorCommand extends Command
                 ->count();
 
             if ($futureMoods > 0) {
-                $this->error("   ❌ {$child->name} has {$futureMoods} future mood logs");
+                $this->logError("   ❌ {$child->name} has {$futureMoods} future mood logs");
                 $this->errors++;
             }
         }
@@ -342,7 +342,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($invalidTherapistAppointments > 0) {
-            $this->error("   ❌ {$invalidTherapistAppointments} appointments with invalid therapist references");
+            $this->logError("   ❌ {$invalidTherapistAppointments} appointments with invalid therapist references");
             $this->errors++;
         }
 
@@ -361,7 +361,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($invalidChildAppointments > 0) {
-            $this->error("   ❌ {$invalidChildAppointments} appointments with invalid child references");
+            $this->logError("   ❌ {$invalidChildAppointments} appointments with invalid child references");
             $this->errors++;
         }
 
@@ -370,7 +370,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($invalidStatuses > 0) {
-            $this->error("   ❌ {$invalidStatuses} appointments with invalid status values");
+            $this->logError("   ❌ {$invalidStatuses} appointments with invalid status values");
             $this->errors++;
         }
 
@@ -391,7 +391,7 @@ class UATDataValidatorCommand extends Command
 
         $overlapCount = $overlappingAppointments[0]->count ?? 0;
         if ($overlapCount > 0) {
-            $this->error("   ❌ {$overlapCount} overlapping appointments detected");
+            $this->logError("   ❌ {$overlapCount} overlapping appointments detected");
             $this->errors++;
         }
 
@@ -414,7 +414,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($invalidSenders > 0) {
-            $this->error("   ❌ {$invalidSenders} messages with invalid sender references");
+            $this->logError("   ❌ {$invalidSenders} messages with invalid sender references");
             $this->errors++;
         }
 
@@ -426,7 +426,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($invalidRecipients > 0) {
-            $this->error("   ❌ {$invalidRecipients} messages with invalid recipient references");
+            $this->logError("   ❌ {$invalidRecipients} messages with invalid recipient references");
             $this->errors++;
         }
 
@@ -468,7 +468,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($invalidAuthors > 0) {
-            $this->error("   ❌ {$invalidAuthors} articles with invalid author references");
+            $this->logError("   ❌ {$invalidAuthors} articles with invalid author references");
             $this->errors++;
         }
 
@@ -477,7 +477,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($invalidStatuses > 0) {
-            $this->error("   ❌ {$invalidStatuses} articles with invalid status values");
+            $this->logError("   ❌ {$invalidStatuses} articles with invalid status values");
             $this->errors++;
         }
 
@@ -532,7 +532,7 @@ class UATDataValidatorCommand extends Command
                 ->count();
 
             if ($invalidDays > 0) {
-                $this->error("   ❌ {$therapist->name} has {$invalidDays} invalid day_of_week values");
+                $this->logError("   ❌ {$therapist->name} has {$invalidDays} invalid day_of_week values");
                 $this->errors++;
             }
 
@@ -542,7 +542,7 @@ class UATDataValidatorCommand extends Command
                 ->count();
 
             if ($invalidTimes > 0) {
-                $this->error("   ❌ {$therapist->name} has {$invalidTimes} invalid time ranges");
+                $this->logError("   ❌ {$therapist->name} has {$invalidTimes} invalid time ranges");
                 $this->errors++;
             }
         }
@@ -563,7 +563,7 @@ class UATDataValidatorCommand extends Command
             $this->info('🎉 All validations passed! UAT data is in excellent condition.');
         } else {
             if ($this->errors > 0) {
-                $this->error("❌ Errors: {$this->errors}");
+                $this->logError("❌ Errors: {$this->errors}");
             }
             
             if ($this->warnings > 0) {
@@ -578,7 +578,7 @@ class UATDataValidatorCommand extends Command
         $this->newLine();
         
         if ($this->errors > 0) {
-            $this->error('🚨 Critical issues found that need attention!');
+            $this->logError('🚨 Critical issues found that need attention!');
             $this->info('💡 Run with --fix flag to attempt automatic repairs.');
             $this->info('💡 For missing data, run: php artisan uat:setup');
         } elseif ($this->warnings > 0) {
@@ -591,7 +591,7 @@ class UATDataValidatorCommand extends Command
     /**
      * Helper methods
      */
-    private function error(string $message): void
+    private function logError(string $message): void
     {
         $this->line($message, null, 'error');
     }
