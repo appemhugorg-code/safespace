@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  uat-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: safespace-uat-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - APP_ENV=uat
+    env_file:
+      - .env.uat
+    networks:
+      - uat-network
+    depends_on:
+      - uat-postgres
+      - uat-redis
+
+  uat-nginx:
+    image: nginx:alpine
+    container_name: safespace-uat-nginx
+    restart: unless-stopped
+    ports:
+      - "8443:443"
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/uat.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/ssl:/etc/ssl/certs
+    networks:
+      - uat-network
+    depends_on:
+      - uat-app
+
+  uat-postgres:
+    image: postgres:15
+    container_name: safespace-uat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: safespace_uat
+      POSTGRES_USER: safespace_uat
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - uat-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-uat.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - uat-network
+    ports:
+      - "5433:5432"
+
+  uat-redis:
+    image: redis:7-alpine
+    container_name: safespace-uat-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - uat-redis-data:/data
+    networks:
+      - uat-network
+    ports:
+      - "6380:6379"
+
+  uat-queue:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: safespace-uat-queue
+    restart: unless-stopped
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=60
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=uat
+    env_file:
+      - .env.uat
+    networks:
+      - uat-network
+    depends_on:
+      - uat-postgres
+      - uat-redis
+
+  uat-scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: safespace-uat-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=uat
+    env_file:
+      - .env.uat
+    networks:
+      - uat-network
+    depends_on:
+      - uat-postgres
+      - uat-redis
+
+  uat-reverb:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: safespace-uat-reverb
+    restart: unless-stopped
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=uat
+    env_file:
+      - .env.uat
+    ports:
+      - "8081:8080"
+    networks:
+      - uat-network
+    depends_on:
+      - uat-postgres
+      - uat-redis
+
+volumes:
+  uat-postgres-data:
+    driver: local
+  uat-redis-data:
+    driver: local
+
+networks:
+  uat-network:
+    driver: bridge

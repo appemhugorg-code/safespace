@@ -134,6 +134,22 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // UAT-specific logging channels
+        'uat-file' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/uat.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        'uat-daily' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/uat.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

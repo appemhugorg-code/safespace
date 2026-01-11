@@ -12,6 +12,11 @@ Route::get('/help', function () {
     return Inertia::render('help');
 })->name('help');
 
+// UAT Routes (only in UAT environment)
+if (app()->environment('uat')) {
+    require __DIR__.'/uat.php';
+}
+
 // Legal pages
 Route::get('/terms-of-service', function () {
     return Inertia::render('legal/terms-of-service');
