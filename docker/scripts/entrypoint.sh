@@ -6,49 +6,121 @@ set -e
 
 echo "Starting SafeSpace application setup..."
 
+# Install Composer dependencies if vendor directory doesn't exist
+if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
+    echo "Installing Composer dependencies..."
+    
+    # Ensure composer.json and composer.lock exist
+    if [ ! -f "/var/www/html/composer.json" ]; then
+        echo "ERROR: composer.json not found!"
+        exit 1
+    fi
+    
+    # Install dependencies with proper error handling
+    if COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-* --verbose; then
+        echo "✅ Composer dependencies installed successfully!"
+    else
+        echo "❌ ERROR: Composer installation failed!"
+        exit 1
+    fi
+    
+    # Verify installation
+    if [ -f "/var/www/html/vendor/autoload.php" ]; then
+        echo "✅ Vendor autoload.php verified"
+    else
+        echo "❌ ERROR: vendor/autoload.php still missing after installation!"
+        exit 1
+    fi
+else
+    echo "✅ Composer dependencies already installed."
+fi
+
+# Ensure proper permissions for vendor directory
+chown -R www-data:www-data /var/www/html/vendor 2>/dev/null || true
+chmod -R 755 /var/www/html/vendor 2>/dev/null || true
+
 # Wait for database to be ready
 echo "Waiting for database connection..."
-until php artisan tinker --execute="DB::connection()->getPdo();" 2>/dev/null; do
-    echo "Database not ready, waiting..."
-    sleep 2
+DB_READY=0
+RETRY_COUNT=0
+MAX_RETRIES=30
+
+while [ $DB_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if php artisan tinker --execute="try { DB::connection()->getPdo(); echo 'DB_OK'; } catch(Exception \$e) { echo 'DB_FAIL'; }" 2>/dev/null | grep -q "DB_OK"; then
+        DB_READY=1
+        echo "✅ Database connection established!"
+    else
+        echo "Database not ready, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+        sleep 2
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+    fi
 done
 
-echo "Database connection established!"
+if [ $DB_READY -eq 0 ]; then
+    echo "❌ ERROR: Database connection failed after $MAX_RETRIES attempts!"
+    exit 1
+fi
 
 # Wait for Redis to be ready
 echo "Waiting for Redis connection..."
-until php artisan tinker --execute="use Illuminate\Support\Facades\Redis; Redis::ping();" 2>/dev/null; do
-    echo "Redis not ready, waiting..."
-    sleep 2
+REDIS_READY=0
+RETRY_COUNT=0
+MAX_RETRIES=30
+
+while [ $REDIS_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if php artisan tinker --execute="try { use Illuminate\Support\Facades\Redis; Redis::ping(); echo 'REDIS_OK'; } catch(Exception \$e) { echo 'REDIS_FAIL'; }" 2>/dev/null | grep -q "REDIS_OK"; then
+        REDIS_READY=1
+        echo "✅ Redis connection established!"
+    else
+        echo "Redis not ready, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+        sleep 2
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+    fi
 done
 
-echo "Redis connection established!"
+if [ $REDIS_READY -eq 0 ]; then
+    echo "❌ ERROR: Redis connection failed after $MAX_RETRIES attempts!"
+    exit 1
+fi
 
 # Run Laravel setup commands
 echo "Running Laravel setup..."
 
 # Generate application key if not set
-if [ "$APP_KEY" = "base64:GENERATE_NEW_KEY_FOR_PRODUCTION" ]; then
+if [ "$APP_KEY" = "base64:GENERATE_NEW_KEY_FOR_PRODUCTION" ] || [ -z "$APP_KEY" ]; then
     echo "Generating application key..."
-    php artisan key:generate
+    if php artisan key:generate --force; then
+        echo "✅ Application key generated"
+    else
+        echo "❌ ERROR: Failed to generate application key!"
+        exit 1
+    fi
 fi
 
 # Publish Reverb configuration
 echo "Publishing Reverb configuration..."
-php artisan vendor:publish --provider="Laravel\Reverb\ReverbServiceProvider" --force
+if php artisan vendor:publish --provider="Laravel\Reverb\ReverbServiceProvider" --force; then
+    echo "✅ Reverb configuration published"
+else
+    echo "⚠️  WARNING: Failed to publish Reverb configuration (may already exist)"
+fi
 
 # Run database migrations
 echo "Running database migrations..."
-if ! php artisan migrate --force; then
-    echo "ERROR: Database migrations failed!"
+if php artisan migrate --force; then
+    echo "✅ Database migrations completed"
+else
+    echo "❌ ERROR: Database migrations failed!"
     exit 1
 fi
 
 # Create queue tables if they don't exist
 echo "Ensuring queue tables exist..."
-php artisan queue:table 2>/dev/null || echo "Queue table already exists or created"
-if ! php artisan migrate --force; then
-    echo "ERROR: Queue table migrations failed!"
+php artisan queue:table 2>/dev/null || echo "Queue table migration already exists"
+if php artisan migrate --force; then
+    echo "✅ Queue tables ready"
+else
+    echo "❌ ERROR: Queue table migrations failed!"
     exit 1
 fi
 
@@ -82,18 +154,28 @@ cd /var/www/html
 
 # Install/update npm dependencies
 echo "Installing npm dependencies..."
-npm ci
+if NODE_OPTIONS="--max-old-space-size=2048" npm ci; then
+    echo "✅ npm dependencies installed"
+else
+    echo "❌ ERROR: npm install failed!"
+    exit 1
+fi
 
 # Build frontend assets with increased memory limit
 echo "Building frontend assets..."
-NODE_OPTIONS="--max-old-space-size=2048" npm run build
+if NODE_OPTIONS="--max-old-space-size=2048" npm run build; then
+    echo "✅ Frontend assets built successfully"
+else
+    echo "❌ ERROR: Frontend assets build failed!"
+    exit 1
+fi
 
 # Verify assets were built
 if [ -d "/var/www/html/public/build" ]; then
-    echo "✅ Frontend assets built successfully"
-    ls -la /var/www/html/public/build/ | head -10
+    echo "✅ Frontend assets verified in public/build/"
+    ls -la /var/www/html/public/build/ | head -5
 else
-    echo "❌ ERROR: Frontend assets build failed!"
+    echo "❌ ERROR: Frontend assets build directory missing!"
     exit 1
 fi
 
@@ -108,25 +190,30 @@ echo "Setting file permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-echo "SafeSpace application setup completed!"
-
 # Test that the application is working
 echo "Testing application health..."
-if php artisan tinker --execute="echo 'Application is healthy';" 2>/dev/null; then
+if php artisan tinker --execute="echo 'Application is healthy';" 2>/dev/null | grep -q "Application is healthy"; then
     echo "✅ Application health check passed"
 else
-    echo "❌ WARNING: Application health check failed"
+    echo "⚠️  WARNING: Application health check failed (may still work)"
 fi
 
 # Ensure supervisor directories exist with proper permissions
 mkdir -p /var/log/supervisor /run/supervisor
 chmod 755 /var/log/supervisor /run/supervisor
+chown -R www-data:www-data /var/log/supervisor
+
+echo "🎉 SafeSpace application setup completed successfully!"
 
 # Start Reverb server in the background for WebSocket support
 echo "Starting Reverb WebSocket server..."
-php artisan reverb:start --host=0.0.0.0 --port=8080 &
-REVERB_PID=$!
-echo "Reverb server started with PID: $REVERB_PID"
+if php artisan reverb:start --host=0.0.0.0 --port=8080 &
+then
+    REVERB_PID=$!
+    echo "✅ Reverb server started with PID: $REVERB_PID"
+else
+    echo "⚠️  WARNING: Failed to start Reverb server"
+fi
 
 # Start supervisord if it's the main command
 if [ "$1" = "/usr/bin/supervisord" ]; then
