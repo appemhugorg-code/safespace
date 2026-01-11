@@ -16,12 +16,41 @@ if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php"
         exit 1
     fi
     
-    # Install dependencies with proper error handling
-    if COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-* --verbose; then
-        echo "✅ Composer dependencies installed successfully!"
+    # Clear any existing vendor directory first
+    rm -rf /var/www/html/vendor 2>/dev/null || true
+    
+    # Install dependencies with proper error handling and skip scripts initially
+    echo "Installing Composer packages (without scripts)..."
+    if COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-* --no-scripts --verbose; then
+        echo "✅ Composer packages installed successfully!"
+        
+        # Now run the scripts separately with better error handling
+        echo "Running Composer scripts..."
+        if COMPOSER_MEMORY_LIMIT=-1 composer run-script post-autoload-dump --no-interaction; then
+            echo "✅ Composer scripts completed successfully!"
+        else
+            echo "⚠️  WARNING: Composer scripts failed, trying alternative approach..."
+            # Try running package discovery manually
+            if php artisan package:discover --ansi; then
+                echo "✅ Package discovery completed manually!"
+            else
+                echo "⚠️  WARNING: Package discovery failed, but continuing..."
+                # Create a basic autoload file if needed
+                composer dump-autoload --no-interaction --optimize || true
+            fi
+        fi
     else
         echo "❌ ERROR: Composer installation failed!"
-        exit 1
+        echo "Trying alternative installation method..."
+        
+        # Alternative: Install without optimization first
+        if COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --no-interaction --ignore-platform-req=ext-* --no-scripts; then
+            echo "✅ Basic Composer installation successful!"
+            composer dump-autoload --optimize --no-interaction || true
+        else
+            echo "❌ ERROR: All Composer installation methods failed!"
+            exit 1
+        fi
     fi
     
     # Verify installation
@@ -43,21 +72,39 @@ chmod -R 755 /var/www/html/vendor 2>/dev/null || true
 echo "Waiting for database connection..."
 DB_READY=0
 RETRY_COUNT=0
-MAX_RETRIES=30
+MAX_RETRIES=60  # Increased from 30 to 60
+
+# First, wait for PostgreSQL service to be available
+echo "Checking if PostgreSQL service is available..."
+while [ $RETRY_COUNT -lt 30 ]; do
+    if nc -z postgres 5432 2>/dev/null; then
+        echo "✅ PostgreSQL service is available"
+        break
+    else
+        echo "PostgreSQL service not available, waiting... (attempt $((RETRY_COUNT + 1))/30)"
+        sleep 2
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+    fi
+done
+
+# Reset retry count for database connection test
+RETRY_COUNT=0
 
 while [ $DB_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if php artisan tinker --execute="try { DB::connection()->getPdo(); echo 'DB_OK'; } catch(Exception \$e) { echo 'DB_FAIL'; }" 2>/dev/null | grep -q "DB_OK"; then
+    if php artisan tinker --execute="try { DB::connection()->getPdo(); echo 'DB_OK'; } catch(Exception \$e) { echo 'DB_FAIL: ' . \$e->getMessage(); }" 2>/dev/null | grep -q "DB_OK"; then
         DB_READY=1
         echo "✅ Database connection established!"
     else
         echo "Database not ready, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
-        sleep 2
+        sleep 3  # Increased sleep time
         RETRY_COUNT=$((RETRY_COUNT + 1))
     fi
 done
 
 if [ $DB_READY -eq 0 ]; then
     echo "❌ ERROR: Database connection failed after $MAX_RETRIES attempts!"
+    echo "Checking database configuration..."
+    php artisan tinker --execute="echo 'DB Host: ' . config('database.connections.pgsql.host'); echo 'DB Name: ' . config('database.connections.pgsql.database');"
     exit 1
 fi
 
