@@ -90,7 +90,7 @@ class UATDataValidatorCommand extends Command
                 }
                 
                 if (!$user->email_verified_at) {
-                    $this->warn("   ⚠️  User {$email} email not verified");
+                    $this->logWarn("   ⚠️  User {$email} email not verified");
                     $this->warnings++;
                     
                     if ($this->option('fix')) {
@@ -101,7 +101,7 @@ class UATDataValidatorCommand extends Command
                 }
                 
                 if (!$user->is_approved) {
-                    $this->warn("   ⚠️  User {$email} not approved");
+                    $this->logWarn("   ⚠️  User {$email} not approved");
                     $this->warnings++;
                     
                     if ($this->option('fix')) {
@@ -148,7 +148,7 @@ class UATDataValidatorCommand extends Command
                 $this->logError("   ❌ Too few {$role} users: {$count} (minimum: {$limits['min']})");
                 $this->errors++;
             } elseif ($count > $limits['max']) {
-                $this->warn("   ⚠️  Many {$role} users: {$count} (maximum recommended: {$limits['max']})");
+                $this->logWarn("   ⚠️  Many {$role} users: {$count} (maximum recommended: {$limits['max']})");
                 $this->warnings++;
             } else {
                 $this->info("   ✅ {$role} count: {$count}");
@@ -210,7 +210,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($guardiansWithoutChildren > 0) {
-            $this->warn("   ⚠️  {$guardiansWithoutChildren} guardians without children");
+            $this->logWarn("   ⚠️  {$guardiansWithoutChildren} guardians without children");
             $this->warnings++;
         }
 
@@ -230,7 +230,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($childrenWithoutTherapists > 0) {
-            $this->warn("   ⚠️  {$childrenWithoutTherapists} children without assigned therapists");
+            $this->logWarn("   ⚠️  {$childrenWithoutTherapists} children without assigned therapists");
             $this->warnings++;
         }
 
@@ -261,10 +261,10 @@ class UATDataValidatorCommand extends Command
         
         foreach ($therapists as $therapist) {
             if ($therapist->assigned_children_count === 0) {
-                $this->warn("   ⚠️  Therapist {$therapist->name} has no assigned children");
+                $this->logWarn("   ⚠️  Therapist {$therapist->name} has no assigned children");
                 $this->warnings++;
             } elseif ($therapist->assigned_children_count > 10) {
-                $this->warn("   ⚠️  Therapist {$therapist->name} has many children ({$therapist->assigned_children_count})");
+                $this->logWarn("   ⚠️  Therapist {$therapist->name} has many children ({$therapist->assigned_children_count})");
                 $this->warnings++;
             } else {
                 $this->info("   ✅ {$therapist->name}: {$therapist->assigned_children_count} children");
@@ -287,10 +287,10 @@ class UATDataValidatorCommand extends Command
             $moodCount = MoodLog::where('user_id', $child->id)->count();
             
             if ($moodCount === 0) {
-                $this->warn("   ⚠️  {$child->name} has no mood logs");
+                $this->logWarn("   ⚠️  {$child->name} has no mood logs");
                 $this->warnings++;
             } elseif ($moodCount < 10) {
-                $this->warn("   ⚠️  {$child->name} has few mood logs ({$moodCount})");
+                $this->logWarn("   ⚠️  {$child->name} has few mood logs ({$moodCount})");
                 $this->warnings++;
             } else {
                 $this->info("   ✅ {$child->name}: {$moodCount} mood logs");
@@ -438,7 +438,7 @@ class UATDataValidatorCommand extends Command
         })->count();
 
         if ($emptyMessages > 0) {
-            $this->warn("   ⚠️  {$emptyMessages} messages with empty or whitespace-only content");
+            $this->logWarn("   ⚠️  {$emptyMessages} messages with empty or whitespace-only content");
             $this->warnings++;
         }
 
@@ -487,7 +487,7 @@ class UATDataValidatorCommand extends Command
             ->count();
 
         if ($publishedWithoutDate > 0) {
-            $this->warn("   ⚠️  {$publishedWithoutDate} published articles without publish date");
+            $this->logWarn("   ⚠️  {$publishedWithoutDate} published articles without publish date");
             $this->warnings++;
             
             if ($this->option('fix')) {
@@ -517,7 +517,7 @@ class UATDataValidatorCommand extends Command
             $availabilityCount = TherapistAvailability::where('therapist_id', $therapist->id)->count();
             
             if ($availabilityCount === 0) {
-                $this->warn("   ⚠️  {$therapist->name} has no availability schedule");
+                $this->logWarn("   ⚠️  {$therapist->name} has no availability schedule");
                 $this->warnings++;
             } else {
                 $this->info("   ✅ {$therapist->name}: {$availabilityCount} availability slots");
@@ -567,7 +567,7 @@ class UATDataValidatorCommand extends Command
             }
             
             if ($this->warnings > 0) {
-                $this->warn("⚠️  Warnings: {$this->warnings}");
+                $this->logWarn("⚠️  Warnings: {$this->warnings}");
             }
             
             if ($this->fixes > 0) {
@@ -582,7 +582,7 @@ class UATDataValidatorCommand extends Command
             $this->info('💡 Run with --fix flag to attempt automatic repairs.');
             $this->info('💡 For missing data, run: php artisan uat:setup');
         } elseif ($this->warnings > 0) {
-            $this->warn('⚠️  Minor issues found - UAT can proceed but consider addressing warnings.');
+            $this->logWarn('⚠️  Minor issues found - UAT can proceed but consider addressing warnings.');
         } else {
             $this->info('✅ UAT data validation completed successfully!');
         }
@@ -596,7 +596,7 @@ class UATDataValidatorCommand extends Command
         $this->line($message, null, 'error');
     }
 
-    private function warn(string $message): void
+    private function logWarn(string $message): void
     {
         $this->line($message, null, 'comment');
     }
