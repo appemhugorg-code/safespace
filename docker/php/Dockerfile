@@ -49,8 +49,8 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 
 # Install PHP dependencies with increased memory limit
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --verbose --ignore-platform-req=ext-* \
-    && composer clear-cache
+# RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --verbose --ignore-platform-req=ext-* \
+#     && composer clear-cache
 
 # Copy application files
 COPY . .
