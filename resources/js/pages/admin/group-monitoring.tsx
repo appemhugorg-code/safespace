@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { AlertTriangle, Users, MessageSquare, Flag, UserPlus, TrendingUp, Activity } from 'lucide-react';
+import { AlertTriangle, Users, MessageSquare, Flag, UserPlus, TrendingUp, Activity, BarChart3, Shield, Search } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import api from '@/lib/api';
+import axios from 'axios';
 
 interface OverviewStats {
     total_groups: number;
@@ -68,6 +69,23 @@ interface JoinRequest {
     created_at: string;
 }
 
+interface Group {
+    id: number;
+    name: string;
+    description: string;
+    creator: {
+        id: number;
+        name: string;
+    };
+    members_count: number;
+    messages_count: number;
+    messages_today: number;
+    messages_this_week: number;
+    latest_message_at: string | null;
+    created_at: string;
+    is_active: boolean;
+}
+
 interface DashboardData {
     overview: OverviewStats;
     recent_activity: RecentActivity[];
@@ -82,19 +100,58 @@ export default function GroupMonitoring() {
     const [timeframe, setTimeframe] = useState('30');
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Groups tab state
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [groupsLoading, setGroupsLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState('updated_at');
+    const [sortOrder, setSortOrder] = useState('desc');
+
     useEffect(() => {
         fetchDashboardData();
     }, [timeframe]);
 
+    useEffect(() => {
+        if (activeTab === 'groups') {
+            fetchGroups();
+        }
+    }, [activeTab, searchTerm, sortBy, sortOrder]);
+
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+
+            // Ensure CSRF cookie is set for Sanctum authentication
+            await axios.get('/sanctum/csrf-cookie');
+
             const response = await api.get(`/admin/groups/dashboard?timeframe=${timeframe}`);
             setDashboardData(response.data);
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchGroups = async () => {
+        try {
+            setGroupsLoading(true);
+
+            await axios.get('/sanctum/csrf-cookie');
+
+            const params = new URLSearchParams({
+                search: searchTerm,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                per_page: '20'
+            });
+
+            const response = await api.get(`/admin/groups?${params}`);
+            setGroups(response.data.data || []);
+        } catch (error) {
+            console.error('Failed to fetch groups:', error);
+        } finally {
+            setGroupsLoading(false);
         }
     };
 
@@ -185,11 +242,23 @@ export default function GroupMonitoring() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="groups">Groups</TabsTrigger>
-                        <TabsTrigger value="moderation">Moderation</TabsTrigger>
-                        <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsList>
+                        <TabsTrigger value="overview" className="flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="groups" className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Groups ({dashboardData?.overview.total_groups || 0})
+                        </TabsTrigger>
+                        <TabsTrigger value="moderation" className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Moderation ({dashboardData?.flagged_content.total_flagged || 0})
+                        </TabsTrigger>
+                        <TabsTrigger value="analytics" className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Analytics
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview" className="space-y-6">
@@ -324,15 +393,136 @@ export default function GroupMonitoring() {
                     <TabsContent value="groups" className="space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>All Groups</CardTitle>
-                                <CardDescription>
-                                    Manage and monitor all groups on the platform
-                                </CardDescription>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>All Groups</CardTitle>
+                                        <CardDescription>
+                                            Manage and monitor all groups on the platform
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="relative">
+                                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search groups..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="pl-8 w-64"
+                                            />
+                                        </div>
+                                        <Select value={sortBy} onValueChange={setSortBy}>
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="name">Name</SelectItem>
+                                                <SelectItem value="created_at">Created Date</SelectItem>
+                                                <SelectItem value="updated_at">Last Activity</SelectItem>
+                                                <SelectItem value="members_count">Member Count</SelectItem>
+                                                <SelectItem value="messages_count">Message Count</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={sortOrder} onValueChange={setSortOrder}>
+                                            <SelectTrigger className="w-32">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="desc">Descending</SelectItem>
+                                                <SelectItem value="asc">Ascending</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">
-                                    Detailed group management interface will be implemented here.
-                                </p>
+                                {groupsLoading ? (
+                                    <div className="flex items-center justify-center h-32">
+                                        <div className="text-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                                            <p className="mt-2 text-muted-foreground">Loading groups...</p>
+                                        </div>
+                                    </div>
+                                ) : groups.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-8">
+                                        {searchTerm ? 'No groups found matching your search.' : 'No groups found.'}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {groups.map((group) => (
+                                            <Card key={group.id} className="border-l-4 border-l-blue-500">
+                                                <CardHeader className="pb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <CardTitle className="text-lg">{group.name}</CardTitle>
+                                                                {!group.is_active && (
+                                                                    <Badge variant="destructive">Inactive</Badge>
+                                                                )}
+                                                            </div>
+                                                            <CardDescription className="mt-1">
+                                                                {group.description || 'No description provided'}
+                                                            </CardDescription>
+                                                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                                                <span>Created by {group.creator.name}</span>
+                                                                <span>•</span>
+                                                                <span>{new Date(group.created_at).toLocaleDateString()}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button size="sm" variant="outline">
+                                                                View Details
+                                                            </Button>
+                                                            {group.is_active ? (
+                                                                <Button size="sm" variant="destructive">
+                                                                    Dissolve
+                                                                </Button>
+                                                            ) : (
+                                                                <Button size="sm" variant="default">
+                                                                    Reactivate
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-blue-600">
+                                                                {group.members_count}
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground">Members</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-green-600">
+                                                                {group.messages_count}
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground">Total Messages</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-orange-600">
+                                                                {group.messages_today}
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground">Today</div>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-purple-600">
+                                                                {group.messages_this_week}
+                                                            </div>
+                                                            <div className="text-sm text-muted-foreground">This Week</div>
+                                                        </div>
+                                                    </div>
+                                                    {group.latest_message_at && (
+                                                        <div className="mt-4 pt-4 border-t">
+                                                            <div className="text-sm text-muted-foreground">
+                                                                Last activity: {new Date(group.latest_message_at).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>

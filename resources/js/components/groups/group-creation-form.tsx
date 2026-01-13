@@ -55,32 +55,29 @@ export default function GroupCreationForm({
         }, {
             onSuccess: (page: any) => {
                 console.log('Group created successfully:', page);
-                
+
                 // Show success toast
                 toast({
                     title: 'Success!',
                     description: 'Group created successfully!',
-                    variant: 'success',
                 });
-                
+
                 // Reset form
                 reset();
                 setSelectedMembers([]);
                 setOpen(false);
-                
-                // Refresh the groups list
-                setTimeout(() => {
-                    router.reload({ only: ['userGroups'] });
-                }, 1000); // Give time for toast to show
-                
+
+                // Redirect to groups page to see the new group
+                window.location.href = '/messages/groups';
+
                 onGroupCreated?.(page);
             },
             onError: (errors) => {
                 console.error('Group creation failed:', errors);
-                
+
                 // Show error toast with better error handling
                 let errorMessage = 'Failed to create group. Please try again.';
-                
+
                 if (errors && typeof errors === 'object') {
                     if (errors.name) {
                         errorMessage = Array.isArray(errors.name) ? errors.name[0] : errors.name;
@@ -93,7 +90,7 @@ export default function GroupCreationForm({
                         }
                     }
                 }
-                    
+
                 toast({
                     title: 'Error',
                     description: errorMessage,

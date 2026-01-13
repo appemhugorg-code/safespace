@@ -280,10 +280,11 @@ class GroupMonitoringController extends Controller
             'most_active_groups' => Group::withCount(['messages' => function ($query) use ($startDate) {
                 $query->where('created_at', '>=', $startDate);
             }])
-                ->having('messages_count', '>', 0)
-                ->orderByDesc('messages_count')
-                ->limit(10)
-                ->get(['id', 'name', 'messages_count']),
+                ->get(['id', 'name', 'messages_count'])
+                ->where('messages_count', '>', 0)
+                ->sortByDesc('messages_count')
+                ->take(10)
+                ->values(),
 
             'largest_groups' => Group::withCount('members')
                 ->orderByDesc('members_count')

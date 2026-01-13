@@ -54,14 +54,30 @@ class GroupController extends Controller
     /**
      * Store a newly created group.
      */
-    public function store(CreateGroupRequest $request)
+    public function store(Request $request)
     {
         $user = $request->user();
 
+        // Validate the request
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:groups,name',
+            'description' => 'nullable|string|max:1000',
+            'initial_members' => 'nullable|array',
+            'initial_members.*' => 'exists:users,id',
+        ]);
+
+        // Check authorization
+        if (!$user || !$user->hasAnyRole(['admin', 'therapist', 'guardian'])) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthorized to create groups.'], 403);
+            }
+            abort(403, 'Unauthorized to create groups.');
+        }
+
         // Create the group
         $group = Group::create([
-            'name' => $request->name,
-            'description' => $request->description,
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'created_by' => $user->id,
         ]);
 
@@ -69,8 +85,8 @@ class GroupController extends Controller
         $this->groupPermissionService->setupGroupPermissions($group);
 
         // Add initial members if provided
-        if ($request->has('initial_members')) {
-            foreach ($request->initial_members as $userId) {
+        if (!empty($validated['initial_members'])) {
+            foreach ($validated['initial_members'] as $userId) {
                 $memberUser = User::find($userId);
                 if ($memberUser && $this->groupPermissionService->canAddUserToGroup($user, $memberUser, $group)) {
                     $group->addMember($memberUser);
@@ -89,8 +105,8 @@ class GroupController extends Controller
             ], 201);
         }
 
-        // For web requests (Inertia), redirect back with success message
-        return redirect()->back()->with('success', 'Group created successfully!');
+        // For web requests (Inertia), redirect to groups page with success message
+        return redirect()->route('messages.groups')->with('success', 'Group created successfully!');
     }
 
     /**

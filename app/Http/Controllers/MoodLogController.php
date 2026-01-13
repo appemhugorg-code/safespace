@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MoodLog;
 use App\Services\ConnectionManagementService;
+use App\Services\ConnectionPermissionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

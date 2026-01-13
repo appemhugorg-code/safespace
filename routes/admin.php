@@ -81,4 +81,7 @@ Route::middleware(['auth', 'active', 'role:admin'])->prefix('admin')->name('admi
         Route::get('/{connection}', [\App\Http\Controllers\Admin\AdminConnectionController::class, 'show'])->name('show');
         Route::delete('/{connection}', [\App\Http\Controllers\Admin\AdminConnectionController::class, 'destroy'])->name('destroy');
     });
+
+    // System Reports
+    Route::get('/reports', [\App\Http\Controllers\Admin\SystemReportsController::class, 'index'])->name('reports.index');
 });

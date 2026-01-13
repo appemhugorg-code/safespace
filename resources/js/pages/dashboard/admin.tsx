@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { Users, Calendar, MessageCircle, AlertTriangle, TrendingUp, Clock, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import SystemReportsController from '@/actions/App/Http/Controllers/Admin/SystemReportsController';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -316,9 +317,11 @@ export default function AdminDashboard({ stats, recentUsers, flaggedMessages, pa
                                 </Link>
                             </Button>
 
-                            <Button variant="outline">
-                                <TrendingUp className="h-4 w-4 mr-2" />
-                                System Reports
+                            <Button variant="outline" asChild>
+                                <Link href={SystemReportsController.index.url()}>
+                                    <TrendingUp className="h-4 w-4 mr-2" />
+                                    System Reports
+                                </Link>
                             </Button>
                         </div>
                     </CardContent>

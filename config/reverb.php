@@ -48,9 +48,16 @@ return [
                     'database' => env('REDIS_DB', 0),
                 ],
             ],
+            'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
+            'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
             'pulse' => [
                 'enabled' => env('REVERB_PULSE_ENABLED', true),
                 'interval' => env('REVERB_PULSE_INTERVAL', 60),
+                'ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
+            ],
+            'telescope' => [
+                'enabled' => env('REVERB_TELESCOPE_ENABLED', false),
+                'ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
             ],
         ],
 

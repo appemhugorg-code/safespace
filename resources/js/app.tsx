@@ -13,19 +13,18 @@ window.Pusher = Pusher;
 console.log('Initializing Echo with Reverb configuration:', {
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+    wsPort: import.meta.env.VITE_REVERB_PORT ?? 8082,
 });
 
+// Initialize Reverb WebSocket connection
 window.Echo = new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
+    wsPort: import.meta.env.VITE_REVERB_PORT ?? 8082,
+    wssPort: import.meta.env.VITE_REVERB_PORT ?? 8082,
+    forceTLS: false,
+    enabledTransports: ['ws'],
     disableStats: true,
     auth: {
         headers: {

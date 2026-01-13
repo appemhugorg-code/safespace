@@ -162,6 +162,13 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/connections/available-therapists', [\App\Http\Controllers\Admin\AdminConnectionController::class, 'availableTherapists']);
         Route::get('/connections/{connection}', [\App\Http\Controllers\Admin\AdminConnectionController::class, 'show']);
         Route::delete('/connections/{connection}', [\App\Http\Controllers\Admin\AdminConnectionController::class, 'destroy']);
+
+        // Group Monitoring API routes
+        Route::get('/groups/dashboard', [\App\Http\Controllers\Admin\GroupMonitoringController::class, 'dashboard']);
+        Route::get('/groups', [\App\Http\Controllers\Admin\GroupMonitoringController::class, 'allGroups']);
+        Route::get('/groups/{group}', [\App\Http\Controllers\Admin\GroupMonitoringController::class, 'groupDetails']);
+        Route::delete('/groups/{group}/dissolve', [\App\Http\Controllers\Admin\GroupMonitoringController::class, 'dissolveGroup']);
+        Route::get('/groups/flagged-messages', [\App\Http\Controllers\Admin\GroupMonitoringController::class, 'flaggedMessages']);
     });
 
     // Child connection routes

@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\ConnectionManagementService;
+use App\Services\ConnectionPermissionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
