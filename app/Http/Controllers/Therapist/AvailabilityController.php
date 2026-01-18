@@ -63,6 +63,31 @@ class AvailabilityController extends Controller
     }
 
     /**
+     * Update availability slot.
+     */
+    public function update(Request $request, TherapistAvailability $availability)
+    {
+        // Ensure therapist owns this availability
+        if ($availability->therapist_id !== $request->user()->id) {
+            abort(403, 'Unauthorized');
+        }
+
+        $request->validate([
+            'day_of_week' => 'required|integer|between:0,6',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ]);
+
+        $availability->update([
+            'day_of_week' => $request->day_of_week,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+        ]);
+
+        return redirect()->back()->with('success', 'Availability slot updated successfully');
+    }
+
+    /**
      * Delete availability slot.
      */
     public function destroy(TherapistAvailability $availability, Request $request)

@@ -88,6 +88,8 @@ return [
                     'port' => env('REVERB_PORT', 443),
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
+                    'max_message_size' => env('REVERB_APP_MAX_MESSAGE_SIZE', 10_000),
+                    'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10000),
                 ],
                 'allowed_origins' => ['*'],
                 'ping_interval' => env('REVERB_PING_INTERVAL', 60),

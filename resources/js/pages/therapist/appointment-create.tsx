@@ -138,8 +138,7 @@ export default function TherapistAppointmentCreate({ clients, therapist }: Props
         router.post('/therapist/appointments', formData, {
             onSuccess: (page) => {
                 console.log('Appointment created successfully', page);
-                toast.success('Appointment request sent successfully! Waiting for client confirmation.');
-                // Redirect will be handled by the controller
+                // Flash message will be handled by the redirect to appointments.index
             },
             onError: (errors) => {
                 console.error('Appointment creation failed:', errors);

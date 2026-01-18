@@ -66,6 +66,12 @@ export default function TherapistAvailability({ availability, overrides }: Props
         end_time: '17:00',
     });
 
+    const editForm = useForm({
+        day_of_week: 1,
+        start_time: '09:00',
+        end_time: '17:00',
+    });
+
     const overrideForm = useForm({
         date: '',
         type: 'unavailable' as 'unavailable' | 'custom_hours',
@@ -136,6 +142,35 @@ export default function TherapistAvailability({ availability, overrides }: Props
         }
     };
 
+    const handleEditAvailability = (slot: Availability) => {
+        setEditingSlot(slot);
+        editForm.setData({
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+        });
+    };
+
+    const handleUpdateAvailability = () => {
+        if (!editingSlot) return;
+
+        editForm.put(`/therapist/availability/${editingSlot.id}`, {
+            onSuccess: () => {
+                setEditingSlot(null);
+                editForm.reset();
+                toast.success('Availability slot updated successfully');
+            },
+            onError: () => {
+                toast.error('Failed to update availability slot');
+            },
+        });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingSlot(null);
+        editForm.reset();
+    };
+
     const groupedAvailability = DAYS_OF_WEEK.map(day => ({
         ...day,
         slots: availability.filter(a => a.day_of_week === day.value),
@@ -186,13 +221,22 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                                                 <Badge variant="secondary">Inactive</Badge>
                                                             )}
                                                         </div>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDeleteAvailability(slot.id)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleEditAvailability(slot)}
+                                                            >
+                                                                <Edit2 className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDeleteAvailability(slot.id)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -461,6 +505,93 @@ export default function TherapistAvailability({ availability, overrides }: Props
                         </Button>
                         <Button onClick={handleAddOverride} disabled={overrideForm.processing}>
                             Add Override
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Availability Dialog */}
+            <Dialog open={!!editingSlot} onOpenChange={() => setEditingSlot(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Availability Slot</DialogTitle>
+                        <DialogDescription>
+                            Update the time slot for your weekly schedule
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Day of Week</Label>
+                            <Select
+                                value={editForm.data.day_of_week.toString()}
+                                onValueChange={(value) => editForm.setData('day_of_week', parseInt(value))}
+                            >
+                                <SelectTrigger className={editForm.errors.day_of_week ? 'border-red-500' : ''}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {DAYS_OF_WEEK.map(day => (
+                                        <SelectItem key={day.value} value={day.value.toString()}>
+                                            {day.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {editForm.errors.day_of_week && (
+                                <p className="text-red-500 text-sm">{editForm.errors.day_of_week}</p>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Start Time</Label>
+                                <Select
+                                    value={editForm.data.start_time}
+                                    onValueChange={(value) => editForm.setData('start_time', value)}
+                                >
+                                    <SelectTrigger className={editForm.errors.start_time ? 'border-red-500' : ''}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
+                                        {TIME_SLOTS.map(slot => (
+                                            <SelectItem key={slot.value} value={slot.value}>
+                                                {slot.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {editForm.errors.start_time && (
+                                    <p className="text-red-500 text-sm">{editForm.errors.start_time}</p>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>End Time</Label>
+                                <Select
+                                    value={editForm.data.end_time}
+                                    onValueChange={(value) => editForm.setData('end_time', value)}
+                                >
+                                    <SelectTrigger className={editForm.errors.end_time ? 'border-red-500' : ''}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
+                                        {TIME_SLOTS.map(slot => (
+                                            <SelectItem key={slot.value} value={slot.value}>
+                                                {slot.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {editForm.errors.end_time && (
+                                    <p className="text-red-500 text-sm">{editForm.errors.end_time}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleCancelEdit}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleUpdateAvailability} disabled={editForm.processing}>
+                            Update Slot
                         </Button>
                     </DialogFooter>
                 </DialogContent>
