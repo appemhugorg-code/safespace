@@ -391,60 +391,59 @@ class AppointmentController extends Controller
      */
     public function availableSlots(Request $request)
     {
-        $request->validate([
-            'therapist_id' => 'required|exists:users,id',
-            'date' => 'required|date|after_or_equal:today',
-        ]);
+        try {
+            $request->validate([
+                'therapist_id' => 'required|exists:users,id',
+                'date' => 'required|date_format:Y-m-d',
+            ]);
 
-        $user = auth()->user();
-        $therapistId = $request->therapist_id;
+            $user = auth()->user();
+            $therapistId = $request->therapist_id;
+            $requestedDate = Carbon::parse($request->date);
 
-        // Validate that the user has an active connection with the therapist
-        if (!$user->hasRole('admin')) {
-            $hasConnection = false;
-            
-            if ($user->hasRole('therapist') && $user->id == $therapistId) {
-                $hasConnection = true; // Therapist checking their own slots
-            } else {
-                $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
+            // Check if date is not too far in the past (allow some flexibility)
+            if ($requestedDate->lt(Carbon::today()->subDay())) {
+                return response()->json(['error' => 'Cannot schedule appointments for past dates'], 400);
             }
-            
-            if (!$hasConnection) {
-                abort(403, 'You do not have an active connection with this therapist');
+
+            // Validate that the user has an active connection with the therapist
+            if (!$user->hasRole('admin')) {
+                $hasConnection = false;
+                
+                if ($user->hasRole('therapist') && $user->id == $therapistId) {
+                    $hasConnection = true; // Therapist checking their own slots
+                } else {
+                    $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
+                }
+                
+                if (!$hasConnection) {
+                    return response()->json(['error' => 'You do not have an active connection with this therapist'], 403);
+                }
             }
-        }
 
-        $date = Carbon::parse($request->date);
+            $date = Carbon::parse($request->date);
 
-        // Get existing appointments for the day
-        $existingAppointments = Appointment::forTherapist($therapistId)
-            ->whereDate('scheduled_at', $date)
-            ->whereIn('status', ['requested', 'confirmed'])
-            ->get();
+            // Use AppointmentScheduler service to get available slots
+            $scheduler = app(\App\Services\AppointmentScheduler::class);
+            $slots = $scheduler->getAvailableSlots($therapistId, $date);
 
-        // Generate available slots (9 AM to 5 PM, 1-hour slots)
-        $availableSlots = [];
-        for ($hour = 9; $hour < 17; $hour++) {
-            $slotTime = $date->copy()->setTime($hour, 0);
-
-            // Check if slot is available
-            $isAvailable = ! $existingAppointments->contains(function ($appointment) use ($slotTime) {
-                return $slotTime->between(
-                    $appointment->scheduled_at,
-                    $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes - 1)
-                );
+            // Transform slots to match frontend expectations
+            $availableSlots = $slots->map(function ($slot) {
+                return [
+                    'time' => $slot['start']->format('H:i'),
+                    'datetime' => $slot['start']->toISOString(),
+                    'display' => $slot['formatted_range'],
+                    'duration_minutes' => $slot['duration_minutes'],
+                ];
             });
 
-            if ($isAvailable && $slotTime->isFuture()) {
-                $availableSlots[] = [
-                    'time' => $slotTime->format('H:i'),
-                    'datetime' => $slotTime->toISOString(),
-                    'display' => $slotTime->format('g:i A'),
-                ];
-            }
+            return response()->json($availableSlots);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 400);
+        } catch (\Exception $e) {
+            \Log::error('Available slots error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch available slots', 'message' => $e->getMessage()], 500);
         }
-
-        return response()->json($availableSlots);
     }
 
     /**

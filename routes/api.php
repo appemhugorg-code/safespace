@@ -210,6 +210,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Multi-participant appointment routes
     Route::prefix('appointments')->group(function () {
+        // Available slots API endpoint
+        Route::get('/available-slots', [\App\Http\Controllers\AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
+
         // Create different types of multi-participant appointments
         Route::post('/group-session', [\App\Http\Controllers\Api\MultiParticipantAppointmentController::class, 'createGroupSession']);
         Route::post('/family-session', [\App\Http\Controllers\Api\MultiParticipantAppointmentController::class, 'createFamilySession']);
@@ -272,6 +275,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ThemePreferenceController::class, 'show']);
         Route::patch('/', [\App\Http\Controllers\Api\ThemePreferenceController::class, 'update']);
         Route::post('/reset', [\App\Http\Controllers\Api\ThemePreferenceController::class, 'reset']);
+    });
+
+    // Notifications API routes
+    Route::prefix('notifications')->group(function () {
+        Route::get('/recent', [\App\Http\Controllers\NotificationController::class, 'recent']);
+        Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
+        Route::post('/{id}/unread', [\App\Http\Controllers\NotificationController::class, 'markAsUnread']);
+        Route::post('/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+        Route::delete('/delete-all-read', [\App\Http\Controllers\NotificationController::class, 'deleteAllRead']);
+        Route::delete('/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy']);
     });
 
     // Admin theme management routes
