@@ -23,8 +23,8 @@ echo "⏳ Waiting for services to start..."
 sleep 10
 
 # Run fresh migrations (CAUTION: This will drop all data!)
-# echo "�️  Rtunning fresh migrations..."
-# docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T safespace-app php artisan migrate:fresh --force --seed
+echo "�️  Rtunning fresh migrations..."
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T safespace-app php artisan migrate:fresh --force --seed
 
 # Check container status
 echo "�  Container status:"
