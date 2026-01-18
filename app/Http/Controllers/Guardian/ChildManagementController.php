@@ -130,4 +130,40 @@ class ChildManagementController extends Controller
         return redirect()->route('guardian.children.show', $child)
             ->with('success', "Child account for {$child->name} has been updated.");
     }
+
+    /**
+     * Display the child's progress overview.
+     */
+    public function progress(User $child)
+    {
+        // Ensure the child belongs to the authenticated guardian
+        if ($child->guardian_id !== auth()->id()) {
+            abort(403, 'Unauthorized access to child account.');
+        }
+
+        $child->load('roles');
+
+        // Get basic progress data
+        $progressData = [
+            'mood_logs_count' => \App\Models\MoodLog::where('user_id', $child->id)->count(),
+            'recent_mood_logs' => \App\Models\MoodLog::where('user_id', $child->id)
+                ->orderBy('mood_date', 'desc')
+                ->limit(7)
+                ->get(),
+            'appointments_count' => \App\Models\Appointment::where('child_id', $child->id)->count(),
+            'recent_appointments' => \App\Models\Appointment::where('child_id', $child->id)
+                ->with(['therapist'])
+                ->orderBy('scheduled_at', 'desc')
+                ->limit(5)
+                ->get(),
+            'messages_count' => \App\Models\Message::where('sender_id', $child->id)
+                ->orWhere('recipient_id', $child->id)
+                ->count(),
+        ];
+
+        return Inertia::render('guardian/child-progress', [
+            'child' => $child,
+            'progressData' => $progressData,
+        ]);
+    }
 }

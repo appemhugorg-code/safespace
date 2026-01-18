@@ -36,7 +36,7 @@ export default function GuardianChildren({ children }: Props) {
     return (
         <AppLayout>
             <Head title="My Children" />
-            
+
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -85,7 +85,7 @@ export default function GuardianChildren({ children }: Props) {
                                         <div className="text-sm text-muted-foreground">
                                             Added: {new Date(child.created_at).toLocaleDateString()}
                                         </div>
-                                        
+
                                         {child.status === 'pending' && (
                                             <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                                                 <p className="text-sm text-yellow-800">
@@ -97,7 +97,7 @@ export default function GuardianChildren({ children }: Props) {
                                         {child.status === 'active' && (
                                             <div className="space-y-2">
                                                 <Button variant="outline" size="sm" className="w-full" asChild>
-                                                    <Link href={`/guardian/children/${child.id}/mood`}>
+                                                    <Link href={`/child/${child.id}/mood`}>
                                                         View Mood History
                                                     </Link>
                                                 </Button>

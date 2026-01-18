@@ -23,7 +23,9 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
 
     // Guardian and therapist routes for viewing child mood data
     Route::middleware('role:guardian,therapist')->group(function () {
-        Route::get('/child/{child}/mood', [MoodLogController::class, 'childMoodData'])->name('child.mood.data');
+        Route::get('/child/{child}/mood', [MoodLogController::class, 'childMoodData'])
+            ->name('child.mood.data')
+            ->where('child', '[0-9]+'); // Ensure child parameter is numeric
     });
 
     // Guardian mood overview route (shows all their children's mood data)

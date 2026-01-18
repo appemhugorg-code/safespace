@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MoodLog;
+use App\Models\User;
 use App\Services\ConnectionManagementService;
 use App\Services\ConnectionPermissionService;
 use Carbon\Carbon;
@@ -112,7 +113,13 @@ class MoodLogController extends Controller
     public function childMoodData(Request $request, $childId)
     {
         $user = auth()->user();
-        $child = User::findOrFail($childId);
+        
+        // Handle both User model and ID parameter
+        if ($childId instanceof User) {
+            $child = $childId;
+        } else {
+            $child = User::findOrFail($childId);
+        }
 
         // Use permission service to check access
         if (!$this->permissionService->canViewMoodData($user, $child)) {
