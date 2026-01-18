@@ -6,6 +6,7 @@ import SystemReportsController from '@/actions/App/Http/Controllers/Admin/System
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PanicAlertNotification from '@/components/panic-alert-notification';
 import { usePanicAlerts } from '@/hooks/use-panic-alerts';
 import AppLayout from '@/layouts/app-layout';
@@ -295,35 +296,65 @@ export default function AdminDashboard({ stats, recentUsers, flaggedMessages, pa
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <Button asChild>
-                                <Link href="/admin/users">
-                                    <Users className="h-4 w-4 mr-2" />
-                                    Manage Users
-                                </Link>
-                            </Button>
+                        <TooltipProvider>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/admin/users">
+                                                <Users className="h-4 w-4" />
+                                                <span className="truncate w-full">Manage Users</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Manage Users</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/appointments">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    View Appointments
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/appointments">
+                                                <Calendar className="h-4 w-4" />
+                                                <span className="truncate w-full">View Appointments</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>View Appointments</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/messages">
-                                    <MessageCircle className="h-4 w-4 mr-2" />
-                                    Monitor Messages
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/messages">
+                                                <MessageCircle className="h-4 w-4" />
+                                                <span className="truncate w-full">Monitor Messages</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Monitor Messages</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href={SystemReportsController.index.url()}>
-                                    <TrendingUp className="h-4 w-4 mr-2" />
-                                    System Reports
-                                </Link>
-                            </Button>
-                        </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href={SystemReportsController.index.url()}>
+                                                <TrendingUp className="h-4 w-4" />
+                                                <span className="truncate w-full">System Reports</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>System Reports</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </TooltipProvider>
                     </CardContent>
                 </Card>
             </div>

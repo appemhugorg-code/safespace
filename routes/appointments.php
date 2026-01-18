@@ -28,7 +28,4 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
 
     // Cancel appointment (available to all involved parties)
     Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
-
-    // API endpoint for available slots
-    Route::get('/api/appointments/available-slots', [AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
 });

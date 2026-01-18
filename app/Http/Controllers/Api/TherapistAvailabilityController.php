@@ -111,19 +111,26 @@ class TherapistAvailabilityController extends Controller
     {
         $request->validate([
             'date' => 'required|date|after_or_equal:today',
-            'duration' => 'sometimes|integer|min:15|max:180',
         ]);
 
         $date = Carbon::parse($request->date);
-        $duration = $request->duration ?? 60;
 
-        $slots = $this->scheduler->getAvailableSlots($therapistId, $date, $duration);
+        $slots = $this->scheduler->getAvailableSlots($therapistId, $date);
+
+        // Format slots for the frontend
+        $formattedSlots = $slots->map(function ($slot) {
+            return [
+                'time' => $slot['start']->format('H:i'),
+                'datetime' => $slot['start']->toISOString(),
+                'display' => $slot['formatted_range'],
+                'duration' => $slot['duration_minutes'],
+            ];
+        });
 
         return response()->json([
             'date' => $date->toDateString(),
             'therapist_id' => $therapistId,
-            'duration_minutes' => $duration,
-            'slots' => $slots,
+            'slots' => $formattedSlots,
         ]);
     }
 

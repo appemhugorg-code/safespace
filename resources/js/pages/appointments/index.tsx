@@ -1,5 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Calendar, Clock, Plus, User, MapPin } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +32,33 @@ interface Props {
 }
 
 export default function AppointmentsIndex({ appointments, currentUser }: Props) {
+    const { flash } = usePage().props as any;
+
+    // Handle flash messages
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
+    // Debug: Log appointments data
+    console.log('Appointments received:', appointments);
+    console.log('Current user:', currentUser);
+
+    // Log each appointment details
+    appointments.forEach((apt, index) => {
+        console.log(`Appointment ${index + 1}:`, {
+            id: apt.id,
+            scheduled_at: apt.scheduled_at,
+            status: apt.status,
+            therapist: apt.therapist?.name,
+            child: apt.child?.name,
+            guardian: apt.guardian?.name
+        });
+    });
 
 
     const getStatusColor = (status: string) => {
@@ -65,13 +94,36 @@ export default function AppointmentsIndex({ appointments, currentUser }: Props) 
         return 'Manage appointments';
     };
 
-    const upcomingAppointments = appointments.filter(apt =>
-        new Date(apt.scheduled_at) >= new Date() && apt.status !== 'cancelled'
-    );
+    const upcomingAppointments = appointments.filter(apt => {
+        const appointmentDate = new Date(apt.scheduled_at);
+        const now = new Date();
+        const isUpcoming = appointmentDate >= now && apt.status !== 'cancelled';
 
-    const pastAppointments = appointments.filter(apt =>
-        new Date(apt.scheduled_at) < new Date() || apt.status === 'completed'
-    );
+        console.log('Filtering appointment:', {
+            id: apt.id,
+            scheduled_at: apt.scheduled_at,
+            appointmentDate: appointmentDate.toISOString(),
+            now: now.toISOString(),
+            status: apt.status,
+            isUpcoming
+        });
+
+        return isUpcoming;
+    });
+
+    const pastAppointments = appointments.filter(apt => {
+        const appointmentDate = new Date(apt.scheduled_at);
+        const now = new Date();
+        return appointmentDate < now || apt.status === 'completed';
+    });
+
+    console.log('Filtered results:', {
+        total: appointments.length,
+        upcoming: upcomingAppointments.length,
+        past: pastAppointments.length,
+        upcomingIds: upcomingAppointments.map(apt => apt.id),
+        pastIds: pastAppointments.map(apt => apt.id)
+    });
 
     return (
         <AppLayout>
@@ -87,12 +139,20 @@ export default function AppointmentsIndex({ appointments, currentUser }: Props) 
                     </div>
 
                     {isTherapist && (
-                        <Button asChild>
-                            <Link href="/therapist/appointments/create">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Schedule Appointment
-                            </Link>
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href="/therapist/availability">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Manage Availability
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href="/therapist/appointments/create">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Schedule Appointment
+                                </Link>
+                            </Button>
+                        </div>
                     )}
 
                     {(isGuardian || isChild) && (

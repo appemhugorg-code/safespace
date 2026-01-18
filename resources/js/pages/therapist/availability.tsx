@@ -1,6 +1,7 @@
-import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, Trash2, Edit2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 
 interface Availability {
     id: number;
@@ -55,7 +55,7 @@ const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => {
 }).flat();
 
 export default function TherapistAvailability({ availability, overrides }: Props) {
-    const { toast } = useToast();
+    const { flash } = usePage().props as any;
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [showOverrideDialog, setShowOverrideDialog] = useState(false);
     const [editingSlot, setEditingSlot] = useState<Availability | null>(null);
@@ -74,67 +74,63 @@ export default function TherapistAvailability({ availability, overrides }: Props
         reason: '',
     });
 
+    // Handle flash messages
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
     const handleAddAvailability = () => {
-        availabilityForm.post('/api/therapist/availability', {
+        availabilityForm.post('/therapist/availability', {
             onSuccess: () => {
                 setShowAddDialog(false);
                 availabilityForm.reset();
-                toast({
-                    title: 'Success',
-                    description: 'Availability slot added successfully',
-                });
+                toast.success('Availability slot added successfully');
             },
             onError: () => {
-                toast({
-                    title: 'Error',
-                    description: 'Failed to add availability slot',
-                    variant: 'destructive',
-                });
+                toast.error('Failed to add availability slot');
             },
         });
     };
 
     const handleDeleteAvailability = (id: number) => {
         if (confirm('Are you sure you want to delete this availability slot?')) {
-            availabilityForm.delete(`/api/therapist/availability/${id}`, {
+            availabilityForm.delete(`/therapist/availability/${id}`, {
                 onSuccess: () => {
-                    toast({
-                        title: 'Success',
-                        description: 'Availability slot deleted successfully',
-                    });
+                    toast.success('Availability slot deleted successfully');
+                },
+                onError: () => {
+                    toast.error('Failed to delete availability slot');
                 },
             });
         }
     };
 
     const handleAddOverride = () => {
-        overrideForm.post('/api/therapist/availability/overrides', {
+        overrideForm.post('/therapist/availability/overrides', {
             onSuccess: () => {
                 setShowOverrideDialog(false);
                 overrideForm.reset();
-                toast({
-                    title: 'Success',
-                    description: 'Override added successfully',
-                });
+                toast.success('Override added successfully');
             },
             onError: () => {
-                toast({
-                    title: 'Error',
-                    description: 'Failed to add override',
-                    variant: 'destructive',
-                });
+                toast.error('Failed to add override');
             },
         });
     };
 
     const handleDeleteOverride = (id: number) => {
         if (confirm('Are you sure you want to delete this override?')) {
-            overrideForm.delete(`/api/therapist/availability/overrides/${id}`, {
+            overrideForm.delete(`/therapist/availability/overrides/${id}`, {
                 onSuccess: () => {
-                    toast({
-                        title: 'Success',
-                        description: 'Override deleted successfully',
-                    });
+                    toast.success('Override deleted successfully');
+                },
+                onError: () => {
+                    toast.error('Failed to delete override');
                 },
             });
         }
@@ -288,7 +284,7 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                 value={availabilityForm.data.day_of_week.toString()}
                                 onValueChange={(value) => availabilityForm.setData('day_of_week', parseInt(value))}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className={availabilityForm.errors.day_of_week ? 'border-red-500' : ''}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -299,6 +295,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {availabilityForm.errors.day_of_week && (
+                                <p className="text-red-500 text-sm">{availabilityForm.errors.day_of_week}</p>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -307,10 +306,10 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                     value={availabilityForm.data.start_time}
                                     onValueChange={(value) => availabilityForm.setData('start_time', value)}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className={availabilityForm.errors.start_time ? 'border-red-500' : ''}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                                         {TIME_SLOTS.map(slot => (
                                             <SelectItem key={slot.value} value={slot.value}>
                                                 {slot.label}
@@ -318,6 +317,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {availabilityForm.errors.start_time && (
+                                    <p className="text-red-500 text-sm">{availabilityForm.errors.start_time}</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label>End Time</Label>
@@ -325,10 +327,10 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                     value={availabilityForm.data.end_time}
                                     onValueChange={(value) => availabilityForm.setData('end_time', value)}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className={availabilityForm.errors.end_time ? 'border-red-500' : ''}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                                         {TIME_SLOTS.map(slot => (
                                             <SelectItem key={slot.value} value={slot.value}>
                                                 {slot.label}
@@ -336,6 +338,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {availabilityForm.errors.end_time && (
+                                    <p className="text-red-500 text-sm">{availabilityForm.errors.end_time}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -367,7 +372,11 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                 value={overrideForm.data.date}
                                 onChange={(e) => overrideForm.setData('date', e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
+                                className={overrideForm.errors.date ? 'border-red-500' : ''}
                             />
+                            {overrideForm.errors.date && (
+                                <p className="text-red-500 text-sm">{overrideForm.errors.date}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label>Type</Label>
@@ -375,7 +384,7 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                 value={overrideForm.data.type}
                                 onValueChange={(value: 'unavailable' | 'custom_hours') => overrideForm.setData('type', value)}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className={overrideForm.errors.type ? 'border-red-500' : ''}>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -383,6 +392,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                     <SelectItem value="custom_hours">Custom Hours</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {overrideForm.errors.type && (
+                                <p className="text-red-500 text-sm">{overrideForm.errors.type}</p>
+                            )}
                         </div>
                         {overrideForm.data.type === 'custom_hours' && (
                             <div className="grid grid-cols-2 gap-4">
@@ -392,10 +404,10 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                         value={overrideForm.data.start_time}
                                         onValueChange={(value) => overrideForm.setData('start_time', value)}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className={overrideForm.errors.start_time ? 'border-red-500' : ''}>
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                                             {TIME_SLOTS.map(slot => (
                                                 <SelectItem key={slot.value} value={slot.value}>
                                                     {slot.label}
@@ -403,6 +415,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {overrideForm.errors.start_time && (
+                                        <p className="text-red-500 text-sm">{overrideForm.errors.start_time}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>End Time</Label>
@@ -410,10 +425,10 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                         value={overrideForm.data.end_time}
                                         onValueChange={(value) => overrideForm.setData('end_time', value)}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className={overrideForm.errors.end_time ? 'border-red-500' : ''}>
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                                             {TIME_SLOTS.map(slot => (
                                                 <SelectItem key={slot.value} value={slot.value}>
                                                     {slot.label}
@@ -421,6 +436,9 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {overrideForm.errors.end_time && (
+                                        <p className="text-red-500 text-sm">{overrideForm.errors.end_time}</p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -430,7 +448,11 @@ export default function TherapistAvailability({ availability, overrides }: Props
                                 value={overrideForm.data.reason}
                                 onChange={(e) => overrideForm.setData('reason', e.target.value)}
                                 placeholder="e.g., Holiday, Conference, Personal day"
+                                className={overrideForm.errors.reason ? 'border-red-500' : ''}
                             />
+                            {overrideForm.errors.reason && (
+                                <p className="text-red-500 text-sm">{overrideForm.errors.reason}</p>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>

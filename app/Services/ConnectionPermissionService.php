@@ -318,7 +318,15 @@ class ConnectionPermissionService
                   // Show future appointments only for active connections
                   ->orWhere(function ($subQ) use ($activeConnections) {
                       $subQ->where('scheduled_at', '>', now())
-                           ->whereIn('child_id', $activeConnections);
+                           ->where(function ($connQ) use ($activeConnections) {
+                               // Child appointments: child_id in active connections
+                               $connQ->whereIn('child_id', $activeConnections)
+                                     // Guardian consultations: guardian_id in active connections and child_id is null
+                                     ->orWhere(function ($guardianQ) use ($activeConnections) {
+                                         $guardianQ->whereIn('guardian_id', $activeConnections)
+                                                   ->whereNull('child_id');
+                                     });
+                           });
                   });
             });
         } elseif ($user->hasRole('guardian')) {

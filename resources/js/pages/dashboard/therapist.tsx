@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PanicAlertNotification from '@/components/panic-alert-notification';
 import { usePanicAlerts } from '@/hooks/use-panic-alerts';
 import AppLayout from '@/layouts/app-layout';
@@ -359,49 +360,107 @@ export default function TherapistDashboard({ stats, upcomingAppointments, recent
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <Button asChild>
-                                <Link href="/therapist/appointments/create">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Schedule Appointment
-                                </Link>
-                            </Button>
+                        <TooltipProvider>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/therapist/appointments/create">
+                                                <Plus className="h-4 w-4" />
+                                                <span className="truncate w-full">Schedule Appointment</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Schedule Appointment</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/appointments">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Manage Schedule
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/therapist/availability">
+                                                <Clock className="h-4 w-4" />
+                                                <span className="truncate w-full">Manage Availability</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Manage Availability</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/therapist/consultation/create">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Schedule Consultation
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/appointments">
+                                                <Calendar className="h-4 w-4" />
+                                                <span className="truncate w-full">Manage Schedule</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Manage Schedule</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/appointments?status=requested">
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Review Requests
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/therapist/consultation/create">
+                                                <Plus className="h-4 w-4" />
+                                                <span className="truncate w-full">Schedule Consultation</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Schedule Consultation</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/messages">
-                                    <MessageCircle className="h-4 w-4 mr-2" />
-                                    Messages
-                                </Link>
-                            </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/appointments?status=requested">
+                                                <TrendingUp className="h-4 w-4" />
+                                                <span className="truncate w-full">Review Requests</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Review Requests</p>
+                                    </TooltipContent>
+                                </Tooltip>
 
-                            <Button variant="outline" asChild>
-                                <Link href="/clients">
-                                    <Users className="h-4 w-4 mr-2" />
-                                    View Clients
-                                </Link>
-                            </Button>
-                        </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
+                                            <Link href="/messages">
+                                                <MessageCircle className="h-4 w-4" />
+                                                <span className="truncate w-full">Messages</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Messages</p>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs col-span-2 md:col-span-3 lg:col-span-1">
+                                            <Link href="/clients">
+                                                <Users className="h-4 w-4" />
+                                                <span className="truncate w-full">View Clients</span>
+                                            </Link>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>View Clients</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </TooltipProvider>
                     </CardContent>
                 </Card>
 

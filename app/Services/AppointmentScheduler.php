@@ -32,7 +32,7 @@ class AppointmentScheduler
     /**
      * Get available time slots for a therapist on a specific date.
      */
-    public function getAvailableSlots(int $therapistId, Carbon $date, int $durationMinutes = 60): Collection
+    public function getAvailableSlots(int $therapistId, Carbon $date, int $durationMinutes = null): Collection
     {
         $therapist = User::findOrFail($therapistId);
 
@@ -76,34 +76,32 @@ class AppointmentScheduler
             ->whereIn('status', ['requested', 'confirmed'])
             ->get();
 
-        // Generate time slots
+        // Generate time slots - return actual availability slots with their natural durations
         $slots = collect();
 
         foreach ($timeRanges as $range) {
-            $currentTime = $date->copy()->setTimeFrom($range['start']);
-            $endTime = $date->copy()->setTimeFrom($range['end']);
+            $slotStart = $date->copy()->setTimeFrom($range['start']);
+            $slotEnd = $date->copy()->setTimeFrom($range['end']);
+            $slotDuration = $slotStart->diffInMinutes($slotEnd);
 
-            while ($currentTime->copy()->addMinutes($durationMinutes)->lte($endTime)) {
-                $slotEnd = $currentTime->copy()->addMinutes($durationMinutes);
+            // Check if slot conflicts with existing appointments
+            $hasConflict = $existingAppointments->contains(function ($appointment) use ($slotStart, $slotEnd) {
+                $appointmentStart = $appointment->scheduled_at;
+                $appointmentEnd = $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes);
 
-                // Check if slot conflicts with existing appointments
-                $hasConflict = $existingAppointments->contains(function ($appointment) use ($currentTime, $slotEnd) {
-                    $appointmentStart = $appointment->scheduled_at;
-                    $appointmentEnd = $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes);
+                return $slotStart->lt($appointmentEnd) && $slotEnd->gt($appointmentStart);
+            });
 
-                    return $currentTime->lt($appointmentEnd) && $slotEnd->gt($appointmentStart);
-                });
-
-                if (! $hasConflict && $currentTime->isFuture()) {
-                    $slots->push([
-                        'start' => $currentTime->copy(),
-                        'end' => $slotEnd->copy(),
-                        'formatted_time' => $currentTime->format('g:i A'),
-                        'available' => true,
-                    ]);
-                }
-
-                $currentTime->addMinutes($durationMinutes);
+            // Only include future slots without conflicts
+            if (! $hasConflict && $slotStart->isFuture()) {
+                $slots->push([
+                    'start' => $slotStart->copy(),
+                    'end' => $slotEnd->copy(),
+                    'duration_minutes' => $slotDuration,
+                    'formatted_time' => $slotStart->format('g:i A'),
+                    'formatted_range' => $slotStart->format('g:i A') . ' - ' . $slotEnd->format('g:i A') . ' (' . $slotDuration . ' min)',
+                    'available' => true,
+                ]);
             }
         }
 

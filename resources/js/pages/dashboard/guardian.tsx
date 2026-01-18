@@ -4,6 +4,7 @@ import { Users, Calendar, MessageCircle, Heart, Plus, TrendingUp, Clock } from '
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResponsiveGrid } from '@/components/ui/responsive-grid';
 import AppLayout from '@/layouts/app-layout';
 
@@ -226,7 +227,7 @@ export default function GuardianDashboard({ stats, children, upcomingAppointment
                                         <div key={appointment.id} className="p-4 border rounded-xl">
                                             <div className="flex items-center justify-between mb-2">
                                                 <p className="text-body font-medium">
-                                                    {appointment.child?.name 
+                                                    {appointment.child?.name
                                                         ? `${appointment.child.name} with ${appointment.therapist?.name || 'Therapist TBD'}`
                                                         : `Consultation with ${appointment.therapist?.name || 'Therapist TBD'}`
                                                     }

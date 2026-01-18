@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import InputError from '@/components/input-error';
 import AppLayout from '@/layouts/app-layout';
 
@@ -29,8 +30,15 @@ export default function CreateConsultation({ guardians }: Props) {
         title: 'Parent Consultation',
         description: '',
     });
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState(false);
+
+    const handleDateChange = (date: Date | undefined) => {
+        setSelectedDate(date);
+        const dateString = date ? date.toISOString().split('T')[0] : '';
+        setData({ ...data, date: dateString });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -164,13 +172,12 @@ export default function CreateConsultation({ guardians }: Props) {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="date">Date</Label>
-                                    <Input
-                                        id="date"
-                                        type="date"
-                                        min={getMinDateTime()}
-                                        value={data.date}
-                                        onChange={(e) => setData({ ...data, date: e.target.value })}
-                                        required
+                                    <DatePicker
+                                        date={selectedDate}
+                                        onDateChange={handleDateChange}
+                                        placeholder="Select consultation date"
+                                        minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                                        className="w-full"
                                     />
                                     <InputError message={errors.date} />
                                 </div>
