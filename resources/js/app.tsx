@@ -3,7 +3,7 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-import { initializeTheme } from './hooks/use-appearance';
+import { ThemeProvider } from './contexts/theme-context';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { configureEcho } from '@laravel/echo-react';
@@ -67,12 +67,17 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        // Wrap the app with the comprehensive theme provider
+        root.render(
+            <ThemeProvider>
+                <App {...props} />
+            </ThemeProvider>
+        );
     },
     progress: {
         color: '#4B5563',
     },
 });
 
-// This will set light / dark mode on load...
-initializeTheme();
+// Theme system is now handled by ThemeProvider context
+// No need for manual initialization

@@ -70,10 +70,42 @@ export class ThemeSyncService {
   }
 
   /**
+   * Check if user is authenticated before making API calls
+   */
+  private isUserAuthenticated(): boolean {
+    // Check for common authentication indicators
+    const hasAuthToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Also check if we're on a login/register page (where user is not authenticated)
+    const isAuthPage = window.location.pathname.includes('/login') || 
+                      window.location.pathname.includes('/register') ||
+                      window.location.pathname.includes('/forgot-password') ||
+                      window.location.pathname.includes('/reset-password');
+    
+    // Check for user data in the page (Laravel often includes this)
+    const hasUserData = document.querySelector('meta[name="user"]') || 
+                       document.querySelector('[data-page]')?.textContent?.includes('"user":{') ||
+                       localStorage.getItem('user') ||
+                       sessionStorage.getItem('user');
+    
+    // Return true only if we have auth token, user data, and we're not on auth pages
+    return !!hasAuthToken && !!hasUserData && !isAuthPage;
+  }
+
+  /**
    * Sync theme preferences to server
    */
   async syncToServer(theme: Partial<ThemeConfig>, options: SyncOptions = {}): Promise<SyncResult> {
     const { immediate = false, retryCount = 3, timeout = 5000 } = options;
+
+    // Check authentication first
+    if (!this.isUserAuthenticated()) {
+      return { 
+        success: false, 
+        error: 'Not authenticated - theme saved locally only',
+        skipRetry: true
+      };
+    }
 
     if (!this.isOnline && !immediate) {
       // Queue for later sync
@@ -117,10 +149,25 @@ export class ThemeSyncService {
           timestamp: this.lastSyncTimestamp,
           source: 'server'
         };
+      } else if (response.status === 401) {
+        // Authentication error - don't retry, just fail silently
+        return { 
+          success: false, 
+          error: 'Not authenticated - theme saved locally only',
+          skipRetry: true
+        };
       } else {
         throw new Error(`Server error: ${response.status}`);
       }
     } catch (error) {
+      // Check if this is an authentication error that shouldn't be retried
+      if (error instanceof Error && error.message.includes('skipRetry')) {
+        return { 
+          success: false, 
+          error: 'Authentication failed - theme saved locally only'
+        };
+      }
+      
       if (retryCount > 0) {
         // Exponential backoff retry
         const delay = Math.pow(2, 3 - retryCount) * 1000;
@@ -147,6 +194,14 @@ export class ThemeSyncService {
    * Load theme preferences from server
    */
   async loadFromServer(): Promise<{ theme: ThemeConfig | null; result: SyncResult }> {
+    // Check authentication first
+    if (!this.isUserAuthenticated()) {
+      return {
+        theme: null,
+        result: { success: false, error: 'Not authenticated', source: 'server' }
+      };
+    }
+
     try {
       const response = await fetch('/api/user/theme', {
         headers: {
@@ -163,6 +218,12 @@ export class ThemeSyncService {
             result: { success: true, source: 'server', timestamp: new Date() }
           };
         }
+      } else if (response.status === 401) {
+        // Authentication error - return null theme silently
+        return {
+          theme: null,
+          result: { success: false, error: 'Not authenticated', source: 'server' }
+        };
       } else if (response.status === 401) {
         // User not authenticated, try defaults
         const defaultResponse = await fetch('/api/theme/defaults');
@@ -238,6 +299,11 @@ export class ThemeSyncService {
    * Check for remote theme updates
    */
   private async checkForRemoteUpdates() {
+    // Check authentication first
+    if (!this.isUserAuthenticated()) {
+      return;
+    }
+
     const lastSync = localStorage.getItem('safespace-theme-sync');
     if (!lastSync) return;
 

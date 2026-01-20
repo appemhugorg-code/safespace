@@ -26,6 +26,11 @@ Route::get('/privacy-policy', function () {
     return Inertia::render('legal/privacy-policy');
 })->name('privacy-policy');
 
+// Theme test page (for development/testing)
+Route::get('/theme-test', function () {
+    return Inertia::render('theme-test');
+})->name('theme-test');
+
 
 
 // Public email unsubscribe route

@@ -1,10 +1,8 @@
-import React from 'react';
+import { useState } from 'react';
 import { useTheme } from '@/contexts/theme-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Copy, Check, Palette, Heart, Brain, Shield } from 'lucide-react';
-import { useState } from 'react';
 
 interface ColorSwatchProps {
   name: string;

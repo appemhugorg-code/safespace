@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { themeSyncService } from '@/services/theme-sync-service';
+import { enhancedThemePersistence } from '@/services/enhanced-theme-persistence';
+import { getTherapeuticColors, lightTherapeuticColors, darkTherapeuticColors } from '@/config/therapeutic-colors';
 
 // Theme configuration types
 export type ThemeMode = 'light' | 'dark' | 'auto';
@@ -53,6 +55,7 @@ export interface ThemeConfig {
     surface: ColorPalette;
     text: ColorPalette;
     status: StatusColors;
+    therapeutic: typeof lightTherapeuticColors; // Add therapeutic colors
   };
   animations: {
     duration: AnimationDurations;
@@ -62,7 +65,7 @@ export interface ThemeConfig {
   };
   accessibility: {
     fontSize: 'small' | 'medium' | 'large' | 'extra-large';
-    contrast: 'normal' | 'high';
+    contrast: 'normal' | 'high' | 'extra-high';
     focusVisible: boolean;
   };
 }
@@ -137,6 +140,7 @@ const defaultTheme: ThemeConfig = {
       error: '#DC2626',
       info: '#2563EB',
     },
+    therapeutic: lightTherapeuticColors,
   },
   animations: {
     duration: {
@@ -209,6 +213,7 @@ const darkTheme: ThemeConfig = {
       800: '#F1F5F9',
       900: '#F8FAFC',
     },
+    therapeutic: darkTherapeuticColors,
   },
 };
 
@@ -225,6 +230,7 @@ interface ThemeContextType {
     syncInProgress: boolean;
     queueLength: number;
     lastSyncTimestamp: Date | null;
+    isLoading?: boolean;
   };
   forceSyncTheme: () => Promise<void>;
 }
@@ -244,23 +250,44 @@ export function ThemeProvider({
   storageKey = 'safespace-theme' 
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeConfig>(() => {
-    // Try to load theme from localStorage
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem(storageKey);
-        if (stored) {
-          const parsedTheme = JSON.parse(stored);
-          return { ...defaultTheme, ...customDefaultTheme, ...parsedTheme };
-        }
-      } catch (error) {
-        console.warn('Failed to parse stored theme:', error);
-      }
-    }
     return { ...defaultTheme, ...customDefaultTheme };
   });
 
   const [isSystemDark, setIsSystemDark] = useState(false);
   const [syncStatus, setSyncStatus] = useState(themeSyncService.getSyncStatus());
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initialize enhanced persistence on mount
+  useEffect(() => {
+    const initializePersistence = async () => {
+      try {
+        // Initialize the enhanced persistence service
+        await enhancedThemePersistence.initialize();
+        
+        // Load theme from persistence layers
+        const { theme: persistedTheme, source } = await enhancedThemePersistence.loadTheme();
+        
+        if (persistedTheme) {
+          console.log(`Theme loaded from ${source}`);
+          setThemeState(prev => ({ ...prev, ...persistedTheme }));
+        } else {
+          console.log('No persisted theme found, using defaults');
+          // Save default theme to establish persistence
+          await enhancedThemePersistence.saveTheme({ ...defaultTheme, ...customDefaultTheme });
+        }
+      } catch (error) {
+        console.error('Failed to initialize theme persistence:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      initializePersistence();
+    } else {
+      setIsLoading(false);
+    }
+  }, [customDefaultTheme]);
 
   // Detect system theme preference
   useEffect(() => {
@@ -306,7 +333,7 @@ export function ThemeProvider({
 
   // Apply theme to document
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isLoading) return;
 
     const root = document.documentElement;
     
@@ -346,6 +373,13 @@ export function ThemeProvider({
       root.classList.remove('high-contrast');
     }
 
+    // Apply extra high contrast if needed
+    if (mergedTheme.accessibility.contrast === 'extra-high') {
+      root.classList.add('extra-high-contrast');
+    } else {
+      root.classList.remove('extra-high-contrast');
+    }
+
     // Apply reduced motion
     if (mergedTheme.animations.reducedMotion) {
       root.classList.add('reduce-motion');
@@ -353,29 +387,35 @@ export function ThemeProvider({
       root.classList.remove('reduce-motion');
     }
 
-  }, [theme, effectiveMode, isSystemDark]);
+  }, [theme, effectiveMode, isSystemDark, isLoading]);
 
-  // Save theme to localStorage and sync to server
+  // Enhanced theme persistence - save theme changes
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isLoading) return;
     
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(theme));
-      
-      // Sync to server (debounced)
-      const timeoutId = setTimeout(() => {
-        themeSyncService.syncToServer(theme).then(() => {
-          setSyncStatus(themeSyncService.getSyncStatus());
-        });
-      }, 1000);
+    const saveThemeChanges = async () => {
+      try {
+        // Save to all persistence layers
+        const results = await enhancedThemePersistence.saveTheme(theme);
+        
+        // Sync across tabs
+        enhancedThemePersistence.syncAcrossTabs(theme);
+        
+        // Update sync status
+        setSyncStatus(enhancedThemePersistence.getSyncStatus());
+        
+        console.log('Theme saved to persistence layers:', results);
+      } catch (error) {
+        console.warn('Failed to save theme changes:', error);
+      }
+    };
 
-      return () => clearTimeout(timeoutId);
-    } catch (error) {
-      console.warn('Failed to save theme to localStorage:', error);
-    }
-  }, [theme, storageKey]);
+    // Debounce theme saves
+    const timeoutId = setTimeout(saveThemeChanges, 500);
+    return () => clearTimeout(timeoutId);
+  }, [theme, isLoading]);
 
-  // Setup cross-device synchronization listeners
+  // Setup cross-device and cross-tab synchronization listeners
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -383,46 +423,50 @@ export function ThemeProvider({
     const handleSystemThemeChange = (event: CustomEvent) => {
       const { isDark } = event.detail;
       setIsSystemDark(isDark);
-      
-      // Auto-switch if in auto mode
-      if (theme.mode === 'auto') {
-        // Theme will update automatically via effectiveMode calculation
-        // No need to update theme state here
-      }
     };
 
     // Handle theme changes from other tabs
-    const handleThemeStorageChange = (event: CustomEvent) => {
+    const handleCrossTabSync = (event: CustomEvent) => {
       const { theme: newTheme } = event.detail;
+      console.log('Received theme update from another tab');
       setThemeState(prev => ({ ...prev, ...newTheme }));
     };
 
-    // Handle remote theme updates
+    // Handle remote theme updates from other devices
     const handleRemoteThemeUpdate = (event: CustomEvent) => {
       const { theme: newTheme } = event.detail;
+      console.log('Received theme update from server');
       setThemeState(prev => ({ ...prev, ...newTheme }));
-      localStorage.setItem(storageKey, JSON.stringify(newTheme));
+    };
+
+    // Handle periodic sync updates
+    const handlePeriodicSync = (event: CustomEvent) => {
+      const { theme: newTheme } = event.detail;
+      console.log('Received periodic theme sync update');
+      setThemeState(prev => ({ ...prev, ...newTheme }));
     };
 
     // Update sync status periodically
     const updateSyncStatus = () => {
-      setSyncStatus(themeSyncService.getSyncStatus());
+      setSyncStatus(enhancedThemePersistence.getSyncStatus());
     };
 
     window.addEventListener('systemThemeChange', handleSystemThemeChange as EventListener);
-    window.addEventListener('themeStorageChange', handleThemeStorageChange as EventListener);
+    window.addEventListener('crossTabThemeSync', handleCrossTabSync as EventListener);
     window.addEventListener('remoteThemeUpdate', handleRemoteThemeUpdate as EventListener);
+    window.addEventListener('periodicThemeSync', handlePeriodicSync as EventListener);
     
-    // Update sync status every 5 seconds
-    const statusInterval = setInterval(updateSyncStatus, 5000);
+    // Update sync status every 10 seconds
+    const statusInterval = setInterval(updateSyncStatus, 10000);
 
     return () => {
       window.removeEventListener('systemThemeChange', handleSystemThemeChange as EventListener);
-      window.removeEventListener('themeStorageChange', handleThemeStorageChange as EventListener);
+      window.removeEventListener('crossTabThemeSync', handleCrossTabSync as EventListener);
       window.removeEventListener('remoteThemeUpdate', handleRemoteThemeUpdate as EventListener);
+      window.removeEventListener('periodicThemeSync', handlePeriodicSync as EventListener);
       clearInterval(statusInterval);
     };
-  }, [theme.mode, storageKey]);
+  }, []);
 
   const setTheme = useCallback((newTheme: Partial<ThemeConfig>) => {
     setThemeState(prev => ({ ...prev, ...newTheme }));
@@ -435,18 +479,36 @@ export function ThemeProvider({
     }));
   }, []);
 
-  const resetTheme = useCallback(() => {
+  const resetTheme = useCallback(async () => {
     const resetThemeConfig = { ...defaultTheme, ...customDefaultTheme };
     setThemeState(resetThemeConfig);
     
-    // Immediately sync reset to server
-    themeSyncService.syncToServer(resetThemeConfig, { immediate: true });
+    try {
+      // Clear all persisted data and save reset theme
+      await enhancedThemePersistence.clearThemeData();
+      await enhancedThemePersistence.saveTheme(resetThemeConfig);
+      
+      // Sync reset across tabs
+      enhancedThemePersistence.syncAcrossTabs(resetThemeConfig);
+      
+      console.log('Theme reset and persisted');
+    } catch (error) {
+      console.error('Failed to reset theme persistence:', error);
+    }
   }, [customDefaultTheme]);
 
   const forceSyncTheme = useCallback(async () => {
     try {
+      // Force sync with server
       await themeSyncService.forceSyncAll();
-      setSyncStatus(themeSyncService.getSyncStatus());
+      
+      // Reload theme from server
+      const { theme: serverTheme } = await themeSyncService.loadFromServer();
+      if (serverTheme) {
+        setThemeState(prev => ({ ...prev, ...serverTheme }));
+      }
+      
+      setSyncStatus(enhancedThemePersistence.getSyncStatus());
     } catch (error) {
       console.warn('Failed to force sync theme:', error);
     }
@@ -459,9 +521,21 @@ export function ThemeProvider({
     resetTheme,
     isSystemDark,
     effectiveMode,
-    syncStatus,
+    syncStatus: {
+      ...syncStatus,
+      isLoading,
+    },
     forceSyncTheme,
   };
+
+  // Show loading state briefly while initializing
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={contextValue}>
