@@ -11,6 +11,10 @@ Route::get('/', function () {
 Route::get('/health', [\App\Http\Controllers\HealthController::class, 'index'])->name('health');
 Route::get('/ping', [\App\Http\Controllers\HealthController::class, 'ping'])->name('ping');
 
+// Reverb testing routes
+Route::get('/reverb-test', [\App\Http\Controllers\ReverbTestController::class, 'index'])->name('reverb.test');
+Route::get('/reverb/status', [\App\Http\Controllers\ReverbTestController::class, 'status'])->name('reverb.status');
+
 Route::get('/help', function () {
     return Inertia::render('help');
 })->name('help');
