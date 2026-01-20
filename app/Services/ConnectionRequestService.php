@@ -165,14 +165,30 @@ class ConnectionRequestService
             // Use the model's approve method which handles the connection creation
             $connection = $request->approve($reviewer);
 
-            // Send notifications about approval
-            $this->notifyRequestApproved($request, $connection, $reviewer);
+            // Try to send notifications about approval, but don't fail if notifications fail
+            try {
+                $this->notifyRequestApproved($request, $connection, $reviewer);
+            } catch (\Exception $e) {
+                // Log notification failure but don't fail the approval
+                \Log::warning('Failed to send approval notification', [
+                    'request_id' => $request->id,
+                    'connection_id' => $connection->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             return true;
         } catch (\Exception $e) {
-            // If approval fails, log the error and return false
-            // In a real application, you might want to log this error
-            return false;
+            // Log the error for debugging
+            \Log::error('Connection request approval failed', [
+                'request_id' => $request->id,
+                'reviewer_id' => $reviewer->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Re-throw the exception so the controller can handle it
+            throw $e;
         }
     }
 
@@ -186,14 +202,30 @@ class ConnectionRequestService
             $success = $request->decline($reviewer);
 
             if ($success) {
-                // Send notifications about decline
-                $this->notifyRequestDeclined($request, $reviewer);
+                // Try to send notifications about decline, but don't fail if notifications fail
+                try {
+                    $this->notifyRequestDeclined($request, $reviewer);
+                } catch (\Exception $e) {
+                    // Log notification failure but don't fail the decline
+                    \Log::warning('Failed to send decline notification', [
+                        'request_id' => $request->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
             return $success;
         } catch (\Exception $e) {
-            // If decline fails, log the error and return false
-            return false;
+            // Log the error for debugging
+            \Log::error('Connection request decline failed', [
+                'request_id' => $request->id,
+                'reviewer_id' => $reviewer->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Re-throw the exception so the controller can handle it
+            throw $e;
         }
     }
 

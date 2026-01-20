@@ -135,7 +135,7 @@ class TherapistConnectionController extends Controller
         $therapist = $request->user();
         $guardianConnections = $this->connectionService->getTherapistGuardianConnections($therapist->id);
 
-        $formattedGuardians = $guardianConnections->map(function ($connection) {
+        $formattedGuardians = $guardianConnections->map(function ($connection) use ($therapist) {
             $guardian = $connection->client;
             
             // Get children connected to this therapist through this guardian
@@ -191,7 +191,7 @@ class TherapistConnectionController extends Controller
         $therapist = $request->user();
         $childConnections = $this->connectionService->getTherapistChildConnections($therapist->id);
 
-        $formattedChildren = $childConnections->map(function ($connection) {
+        $formattedChildren = $childConnections->map(function ($connection) use ($therapist) {
             $child = $connection->client;
             
             return [
@@ -283,10 +283,32 @@ class TherapistConnectionController extends Controller
             
             // Validate request exists and belongs to this therapist
             $connectionRequest = \App\Models\ConnectionRequest::find($requestId);
-            $permissionCheck = $this->validateRequestPermission($connectionRequest, $therapist->id, 'approve');
             
-            if ($permissionCheck !== true) {
-                return $permissionCheck;
+            if (!$connectionRequest) {
+                return $this->errorResponse(
+                    'REQUEST_NOT_FOUND',
+                    'Connection request not found.',
+                    [],
+                    404
+                );
+            }
+            
+            if ($connectionRequest->target_therapist_id !== $therapist->id) {
+                return $this->errorResponse(
+                    'UNAUTHORIZED',
+                    'You are not authorized to process this request.',
+                    [],
+                    403
+                );
+            }
+            
+            if ($connectionRequest->status !== 'pending') {
+                return $this->errorResponse(
+                    'REQUEST_ALREADY_PROCESSED',
+                    'This request has already been processed.',
+                    [],
+                    400
+                );
             }
 
             $success = $this->requestService->processRequest($requestId, 'approve', $therapist->id);
@@ -294,7 +316,7 @@ class TherapistConnectionController extends Controller
             if ($success) {
                 // Get the newly created connection
                 $connection = \App\Models\TherapistClientConnection::where('therapist_id', $therapist->id)
-                    ->where('client_id', $connectionRequest->requester_id)
+                    ->where('client_id', $connectionRequest->target_client_id ?? $connectionRequest->requester_id)
                     ->latest()
                     ->first();
 
@@ -319,8 +341,25 @@ class TherapistConnectionController extends Controller
                 [],
                 500
             );
-        } catch (Exception $e) {
-            return $this->handleConnectionError($e, 'Failed to approve connection request.');
+        } catch (\Exception $e) {
+            // Log the actual error for debugging
+            \Log::error('Connection request approval failed', [
+                'request_id' => $requestId,
+                'therapist_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $this->errorResponse(
+                'APPROVAL_ERROR',
+                'An error occurred while processing the request: ' . $e->getMessage(),
+                [
+                    'error_details' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ],
+                500
+            );
         }
     }
 
@@ -334,10 +373,32 @@ class TherapistConnectionController extends Controller
             
             // Validate request exists and belongs to this therapist
             $connectionRequest = \App\Models\ConnectionRequest::find($requestId);
-            $permissionCheck = $this->validateRequestPermission($connectionRequest, $therapist->id, 'decline');
             
-            if ($permissionCheck !== true) {
-                return $permissionCheck;
+            if (!$connectionRequest) {
+                return $this->errorResponse(
+                    'REQUEST_NOT_FOUND',
+                    'Connection request not found.',
+                    [],
+                    404
+                );
+            }
+            
+            if ($connectionRequest->target_therapist_id !== $therapist->id) {
+                return $this->errorResponse(
+                    'UNAUTHORIZED',
+                    'You are not authorized to process this request.',
+                    [],
+                    403
+                );
+            }
+            
+            if ($connectionRequest->status !== 'pending') {
+                return $this->errorResponse(
+                    'REQUEST_ALREADY_PROCESSED',
+                    'This request has already been processed.',
+                    [],
+                    400
+                );
             }
 
             $success = $this->requestService->processRequest($requestId, 'decline', $therapist->id);
@@ -352,8 +413,25 @@ class TherapistConnectionController extends Controller
                 [],
                 500
             );
-        } catch (Exception $e) {
-            return $this->handleConnectionError($e, 'Failed to decline connection request.');
+        } catch (\Exception $e) {
+            // Log the actual error for debugging
+            \Log::error('Connection request decline failed', [
+                'request_id' => $requestId,
+                'therapist_id' => $request->user()->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $this->errorResponse(
+                'DECLINE_ERROR',
+                'An error occurred while processing the request: ' . $e->getMessage(),
+                [
+                    'error_details' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ],
+                500
+            );
         }
     }
 

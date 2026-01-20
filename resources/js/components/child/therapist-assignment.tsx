@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, UserPlus, CheckCircle, Clock, AlertCircle, X } from 'lucide-react';
+import { Users, UserPlus, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ConnectedTherapist {
@@ -65,9 +65,8 @@ export default function TherapistAssignment({
 
     const submitAssignment = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/api/guardian/child-assignments', {
+        post('/guardian/child-assignments', {
             onSuccess: () => {
-                toast.success('Therapist assignment request sent successfully!');
                 setShowAssignDialog(false);
                 reset('therapist_id');
                 onAssignmentUpdate?.();

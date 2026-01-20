@@ -1,5 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, User, Mail, Calendar, Shield, Edit, TrendingUp, Heart, MessageSquare } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +54,22 @@ interface Props {
 }
 
 export default function ChildDetails({ child, therapistAssignment }: Props) {
+    const { props } = usePage();
+    const { flash } = props as any;
+
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
+
+    const handleAssignmentUpdate = () => {
+        // Refresh the page data to show updated assignments
+        router.reload({ only: ['therapistAssignment'] });
+    };
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
@@ -246,6 +264,7 @@ export default function ChildDetails({ child, therapistAssignment }: Props) {
                             connectedTherapists={therapistAssignment.connectedTherapists}
                             pendingAssignments={therapistAssignment.pendingAssignments}
                             availableTherapists={therapistAssignment.availableTherapists}
+                            onAssignmentUpdate={handleAssignmentUpdate}
                         />
                     </div>
 

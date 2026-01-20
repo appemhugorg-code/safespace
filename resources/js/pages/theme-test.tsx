@@ -82,9 +82,9 @@ export default function ThemeTestPage() {
               <h3 className="font-semibold mb-2">Testing Instructions:</h3>
               <ul className="text-sm space-y-1 list-disc list-inside">
                 <li>Resize your browser window to test different breakpoints</li>
-                <li>On mobile (< 640px): First grid should show 1 column, second grid should show 2 columns</li>
+                <li>On mobile (less than 640px): First grid should show 1 column, second grid should show 2 columns</li>
                 <li>On tablet (640px - 1024px): First grid should show 2 columns, second grid should show 3 columns</li>
-                <li>On desktop (> 1024px): First grid should show 4 columns, second grid should show 6 columns</li>
+                <li>On desktop (greater than 1024px): First grid should show 4 columns, second grid should show 6 columns</li>
                 <li>Cards should have proper spacing and not be squashed together</li>
               </ul>
             </div>

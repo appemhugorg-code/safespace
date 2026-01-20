@@ -279,7 +279,7 @@ class ClientConnectionController extends Controller
      * Create a child assignment request.
      * Requirements: 8.2
      */
-    public function assignChild(CreateChildAssignmentRequest $request): JsonResponse
+    public function assignChild(CreateChildAssignmentRequest $request)
     {
         try {
             $guardian = $request->user();
@@ -293,6 +293,12 @@ class ClientConnectionController extends Controller
             $child = User::findOrFail($request->validated('child_id'));
             $therapist = User::findOrFail($request->validated('therapist_id'));
 
+            // Check if this is an Inertia request
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->with('success', 'Child assignment request sent successfully.');
+            }
+
+            // Return JSON for API requests
             return $this->successResponse(
                 'Child assignment request sent successfully.',
                 [
@@ -313,6 +319,11 @@ class ClientConnectionController extends Controller
                 201
             );
         } catch (Exception $e) {
+            // Check if this is an Inertia request for error handling too
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->withErrors(['message' => 'Failed to create child assignment request.']);
+            }
+            
             return $this->handleConnectionError($e, 'Failed to create child assignment request.');
         }
     }

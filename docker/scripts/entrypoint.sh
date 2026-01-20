@@ -108,48 +108,131 @@ if [ $DB_READY -eq 0 ]; then
     exit 1
 fi
 
-# Wait for Redis to be ready
+# Wait for Redis to be ready (REQUIRED)
 echo "Waiting for Redis connection..."
 REDIS_READY=0
 RETRY_COUNT=0
-MAX_RETRIES=30
+MAX_RETRIES=60  # Increased retries since Redis is required
 
-# First, wait for Redis service to be available
+# First, wait for Redis service to be available on the network
 echo "Checking if Redis service is available..."
 while [ $RETRY_COUNT -lt 30 ]; do
     if nc -z redis 6379 2>/dev/null; then
-        echo "✅ Redis service is available"
+        echo "✅ Redis service is available on network"
         break
     else
-        echo "Redis service not available, waiting... (attempt $((RETRY_COUNT + 1))/30)"
+        echo "Redis service not available on network, waiting... (attempt $((RETRY_COUNT + 1))/30)"
         sleep 2
         RETRY_COUNT=$((RETRY_COUNT + 1))
     fi
 done
 
+if [ $RETRY_COUNT -eq 30 ]; then
+    echo "❌ ERROR: Redis service never became available on network!"
+    echo "Debugging network connectivity..."
+    echo "Available hosts:"
+    getent hosts redis || echo "Redis host not found in DNS"
+    echo "Network interfaces:"
+    ip addr show | grep -E "(inet|UP)" || echo "Could not show network interfaces"
+    echo "Docker network info:"
+    cat /etc/hosts | grep redis || echo "Redis not in /etc/hosts"
+    exit 1
+fi
+
 # Reset retry count for Redis connection test
 RETRY_COUNT=0
 
+# Test Redis connection with redis-cli
+echo "Testing Redis connection..."
 while [ $REDIS_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if php artisan tinker --execute="try { use Illuminate\Support\Facades\Redis; Redis::ping(); echo 'REDIS_OK'; } catch(Exception \$e) { echo 'REDIS_FAIL: ' . \$e->getMessage(); }" 2>/dev/null | grep -q "REDIS_OK"; then
-        REDIS_READY=1
-        echo "✅ Redis connection established!"
+    # Test with redis-cli ping
+    if redis-cli -h redis -p 6379 ping 2>/dev/null | grep -q "PONG"; then
+        echo "✅ Redis responds to ping"
+        
+        # Test Redis write/read operations
+        if redis-cli -h redis -p 6379 set test_key "test_value" >/dev/null 2>&1 && \
+           redis-cli -h redis -p 6379 get test_key 2>/dev/null | grep -q "test_value"; then
+            echo "✅ Redis read/write operations working"
+            
+            # Clean up test key
+            redis-cli -h redis -p 6379 del test_key >/dev/null 2>&1
+            
+            # Test Laravel Redis connection
+            if php artisan tinker --execute="
+            try { 
+                use Illuminate\Support\Facades\Redis; 
+                \$result = Redis::ping(); 
+                if (\$result === 'PONG' || \$result === '+PONG' || \$result === true) {
+                    echo 'REDIS_LARAVEL_OK';
+                } else {
+                    echo 'REDIS_LARAVEL_FAIL: Unexpected ping result: ' . var_export(\$result, true);
+                }
+            } catch(Exception \$e) { 
+                echo 'REDIS_LARAVEL_FAIL: ' . \$e->getMessage(); 
+            }
+            " 2>/dev/null | grep -q "REDIS_LARAVEL_OK"; then
+                REDIS_READY=1
+                echo "✅ Laravel Redis connection established!"
+            else
+                echo "❌ Laravel Redis connection failed, checking configuration..."
+                php artisan tinker --execute="
+                echo 'Redis Host: ' . config('database.redis.default.host');
+                echo 'Redis Port: ' . config('database.redis.default.port');
+                echo 'Redis DB: ' . config('database.redis.default.database');
+                echo 'Redis Timeout: ' . config('database.redis.default.timeout');
+                " 2>/dev/null || echo "Could not check Redis config"
+                
+                echo "Retrying Laravel Redis connection..."
+                sleep 3
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+            fi
+        else
+            echo "❌ Redis read/write operations failed"
+            sleep 2
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+        fi
     else
-        echo "Redis not ready, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
-        sleep 3  # Increased sleep time
+        echo "Redis not responding to ping, waiting... (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+        sleep 2
         RETRY_COUNT=$((RETRY_COUNT + 1))
     fi
 done
 
 if [ $REDIS_READY -eq 0 ]; then
     echo "❌ ERROR: Redis connection failed after $MAX_RETRIES attempts!"
-    echo "Checking Redis configuration..."
-    php artisan tinker --execute="echo 'Redis Host: ' . config('database.redis.default.host'); echo 'Redis Port: ' . config('database.redis.default.port');" 2>/dev/null || echo "Could not check Redis config"
+    echo "Redis is required for this application. Debugging information:"
+    echo "Redis Host: redis"
+    echo "Redis Port: 6379"
     
-    # Try to continue without Redis for now (will cause issues but allows debugging)
-    echo "⚠️  WARNING: Continuing without Redis - some features may not work!"
+    # Try to get more debugging info
+    echo "Testing direct Redis connection..."
+    timeout 5 redis-cli -h redis -p 6379 info server 2>/dev/null || echo "Could not get Redis server info"
+    
+    echo "Checking Redis container status..."
+    echo "If this fails, check: docker-compose logs redis"
+    
+    exit 1
+fi
+
+# Configure Redis (REQUIRED)
+echo "Configuring Redis connection..."
+if php artisan tinker --execute="
+use App\Services\RedisConnectionService;
+try {
+    if (RedisConnectionService::configureRedisOrFallback()) {
+        echo 'REDIS_CONFIG_SUCCESS';
+    } else {
+        echo 'REDIS_CONFIG_FAIL';
+    }
+} catch (Exception \$e) {
+    echo 'REDIS_CONFIG_ERROR: ' . \$e->getMessage();
+}
+" 2>/dev/null | grep -q "REDIS_CONFIG_SUCCESS"; then
+    echo "✅ Redis configuration successful!"
 else
-    echo "✅ Redis connection verified!"
+    echo "❌ ERROR: Redis configuration failed!"
+    echo "This is a critical error - Redis is required for this application."
+    exit 1
 fi
 
 # Run Laravel setup commands
@@ -291,7 +374,7 @@ chown -R www-data:www-data /var/log/supervisor
 
 echo "🎉 SafeSpace application setup completed successfully!"
 
-# Start Reverb server in the background for WebSocket support
+# Start Reverb server in the background for WebSocket support (REQUIRED)
 echo "Starting Reverb WebSocket server..."
 
 # Wait a bit for everything to be ready
@@ -309,8 +392,20 @@ if php artisan reverb:start --host=0.0.0.0 --port=8080 --no-interaction &
 then
     REVERB_PID=$!
     echo "✅ Reverb server started with PID: $REVERB_PID"
+    
+    # Give Reverb a moment to start
+    sleep 3
+    
+    # Verify Reverb is running
+    if kill -0 $REVERB_PID 2>/dev/null; then
+        echo "✅ Reverb server is running"
+    else
+        echo "❌ ERROR: Reverb server failed to start properly"
+        exit 1
+    fi
 else
-    echo "⚠️  WARNING: Failed to start Reverb server"
+    echo "❌ ERROR: Failed to start Reverb server"
+    exit 1
 fi
 
 # Start supervisord if it's the main command

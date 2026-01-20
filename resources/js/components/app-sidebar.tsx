@@ -89,6 +89,11 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
                 badge: unviewedCount > 0 ? unviewedCount.toString() : undefined,
             },
             {
+                title: 'Client Connections',
+                href: '/therapist/connections',
+                icon: UserCheck,
+            },
+            {
                 title: 'Appointments',
                 href: '/appointments',
                 icon: Calendar,

@@ -20,6 +20,9 @@ Route::middleware(['auth', 'active', 'role:guardian'])->prefix('guardian')->name
     // Child progress route
     Route::get('/children/{child}/progress', [ChildManagementController::class, 'progress'])->name('children.progress');
     
+    // Child assignment routes
+    Route::post('/child-assignments', [ClientConnectionController::class, 'assignChild'])->name('child-assignments.store');
+    
     // Connection management routes
     Route::prefix('connections')->name('connections.')->group(function () {
         Route::get('/', [ClientConnectionController::class, 'index'])->name('index');

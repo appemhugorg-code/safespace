@@ -8,6 +8,9 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+Route::get('/health', [\App\Http\Controllers\HealthController::class, 'index'])->name('health');
+Route::get('/ping', [\App\Http\Controllers\HealthController::class, 'ping'])->name('ping');
+
 Route::get('/help', function () {
     return Inertia::render('help');
 })->name('help');
