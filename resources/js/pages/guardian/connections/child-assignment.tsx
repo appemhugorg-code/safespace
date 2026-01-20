@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Users, Clock, CheckCircle, UserPlus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import AppLayout from '@/layouts/app-layout';
 
 interface Therapist {
     id: number;
@@ -100,10 +101,10 @@ export default function GuardianChildAssignment({ children, connected_therapists
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title="Assign Children to Therapists" />
 
-            <div className="space-y-6">
+            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Assign Children to Therapists</h1>
@@ -338,6 +339,6 @@ export default function GuardianChildAssignment({ children, connected_therapists
                     </DialogContent>
                 </Dialog>
             </div>
-        </>
+        </AppLayout>
     );
 }

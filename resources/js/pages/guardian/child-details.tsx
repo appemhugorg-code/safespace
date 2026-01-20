@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import AppLayout from '@/layouts/app-layout';
+import TherapistAssignment from '@/components/child/therapist-assignment';
 
 interface Child {
     id: number;
@@ -16,11 +17,41 @@ interface Child {
     roles: Array<{ name: string }>;
 }
 
-interface Props {
-    child: Child;
+interface ConnectedTherapist {
+    id: number;
+    name: string;
+    connection_id: number;
+    assigned_at: string;
+    specialization?: string;
 }
 
-export default function ChildDetails({ child }: Props) {
+interface PendingAssignment {
+    id: number;
+    therapist_name: string;
+    created_at: string;
+}
+
+interface AvailableTherapist {
+    id: number;
+    name: string;
+    email: string;
+    specialization?: string;
+    connection_id: number;
+    assigned_at: string;
+}
+
+interface TherapistAssignmentData {
+    connectedTherapists: ConnectedTherapist[];
+    pendingAssignments: PendingAssignment[];
+    availableTherapists: AvailableTherapist[];
+}
+
+interface Props {
+    child: Child;
+    therapistAssignment: TherapistAssignmentData;
+}
+
+export default function ChildDetails({ child, therapistAssignment }: Props) {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
@@ -208,6 +239,14 @@ export default function ChildDetails({ child }: Props) {
                                 </CardContent>
                             </Card>
                         )}
+
+                        {/* Therapist Assignment Section */}
+                        <TherapistAssignment
+                            child={child}
+                            connectedTherapists={therapistAssignment.connectedTherapists}
+                            pendingAssignments={therapistAssignment.pendingAssignments}
+                            availableTherapists={therapistAssignment.availableTherapists}
+                        />
                     </div>
 
                     {/* Sidebar */}

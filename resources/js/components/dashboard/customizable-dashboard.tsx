@@ -217,7 +217,12 @@ export function CustomizableDashboard({ children, className = '' }: Customizable
     if (layoutType === 'list') {
       return `${baseClasses} grid-cols-1`;
     }
-    return `${baseClasses} grid-cols-${columns}`;
+    // Use static classes instead of dynamic ones
+    const gridClass = columns === 1 ? 'grid-cols-1' :
+                     columns === 2 ? 'grid-cols-2' :
+                     columns === 3 ? 'grid-cols-3' :
+                     columns === 4 ? 'grid-cols-4' : 'grid-cols-2';
+    return `${baseClasses} ${gridClass}`;
   };
 
   return (

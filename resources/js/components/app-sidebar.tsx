@@ -132,6 +132,11 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
                 icon: Users,
             },
             {
+                title: 'Therapist Connections',
+                href: '/guardian/connections',
+                icon: UserCheck,
+            },
+            {
                 title: 'Mood Tracking',
                 href: '/mood/overview',
                 icon: Heart,

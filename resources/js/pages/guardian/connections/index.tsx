@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Clock, CheckCircle, XCircle, Plus, Search } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
 interface Therapist {
     id: number;
@@ -105,10 +106,10 @@ export default function GuardianConnectionsIndex({ connections, pending_requests
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title="My Therapist Connections" />
 
-            <div className="space-y-6">
+            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">My Therapist Connections</h1>
@@ -348,6 +349,6 @@ export default function GuardianConnectionsIndex({ connections, pending_requests
                     </TabsContent>
                 </Tabs>
             </div>
-        </>
+        </AppLayout>
     );
 }

@@ -96,7 +96,11 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
       case 'horizontal':
         return 'flex flex-wrap gap-4';
       case 'grid':
-        return `grid grid-cols-1 md:grid-cols-${gridColumns} gap-4`;
+        // Use static classes instead of dynamic ones
+        const gridClass = gridColumns === 2 ? 'md:grid-cols-2' : 
+                         gridColumns === 3 ? 'md:grid-cols-3' : 
+                         gridColumns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-2';
+        return `grid grid-cols-1 ${gridClass} gap-4`;
       default:
         return spacingClasses[spacing];
     }

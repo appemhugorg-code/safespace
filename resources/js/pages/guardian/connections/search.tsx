@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Star, Clock, Users, Send, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import AppLayout from '@/layouts/app-layout';
 
 interface Therapist {
     id: number;
@@ -114,10 +115,10 @@ export default function GuardianTherapistSearch({ therapists, recommended_therap
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title="Find Therapists" />
 
-            <div className="space-y-6">
+            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Find Therapists</h1>
@@ -397,6 +398,6 @@ export default function GuardianTherapistSearch({ therapists, recommended_therap
                     </DialogContent>
                 </Dialog>
             </div>
-        </>
+        </AppLayout>
     );
 }

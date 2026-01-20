@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Calendar, Clock, MessageCircle, User, Star, MapPin } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
 
 interface Therapist {
     id: number;
@@ -128,10 +129,10 @@ export default function GuardianConnectionShow({ connection }: Props) {
     };
 
     return (
-        <>
+        <AppLayout>
             <Head title={`Connection with ${connection.therapist.name}`} />
 
-            <div className="space-y-6">
+            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/guardian/connections">
@@ -392,6 +393,6 @@ export default function GuardianConnectionShow({ connection }: Props) {
                     </TabsContent>
                 </Tabs>
             </div>
-        </>
+        </AppLayout>
     );
 }

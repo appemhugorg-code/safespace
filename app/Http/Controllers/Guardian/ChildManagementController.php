@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\ConnectionRequest;
 use App\Services\EmailNotificationService;
+use App\Services\ConnectionManagementService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -78,7 +80,7 @@ class ChildManagementController extends Controller
     /**
      * Display the specified child.
      */
-    public function show(User $child)
+    public function show(User $child, ConnectionManagementService $connectionService)
     {
         // Ensure the child belongs to the authenticated guardian
         if ($child->guardian_id !== auth()->id()) {
@@ -86,9 +88,58 @@ class ChildManagementController extends Controller
         }
 
         $child->load('roles');
+        $guardian = auth()->user();
+
+        // Get child's current therapist connections
+        $childConnections = $connectionService->getClientConnections($child->id);
+        $connectedTherapists = $childConnections->map(function ($connection) {
+            return [
+                'id' => $connection->therapist->id,
+                'name' => $connection->therapist->name,
+                'connection_id' => $connection->id,
+                'assigned_at' => $connection->assigned_at,
+                'specialization' => 'General Therapy', // Placeholder for future profile fields
+            ];
+        });
+
+        // Get pending assignment requests for this child
+        $pendingAssignments = ConnectionRequest::where('target_client_id', $child->id)
+            ->where('status', 'pending')
+            ->where('request_type', 'guardian_child_assignment')
+            ->with(['targetTherapist'])
+            ->get()
+            ->map(function ($request) {
+                return [
+                    'id' => $request->id,
+                    'therapist_name' => $request->targetTherapist->name,
+                    'created_at' => $request->created_at,
+                ];
+            });
+
+        // Get guardian's connected therapists that are available for assignment
+        $guardianConnections = $connectionService->getClientConnections($guardian->id);
+        $connectedTherapistIds = $connectedTherapists->pluck('id')->toArray();
+        
+        $availableTherapists = $guardianConnections->filter(function ($connection) use ($connectedTherapistIds) {
+            return !in_array($connection->therapist->id, $connectedTherapistIds);
+        })->map(function ($connection) {
+            return [
+                'id' => $connection->therapist->id,
+                'name' => $connection->therapist->name,
+                'email' => $connection->therapist->email,
+                'specialization' => 'General Therapy', // Placeholder for future profile fields
+                'connection_id' => $connection->id,
+                'assigned_at' => $connection->assigned_at,
+            ];
+        });
 
         return Inertia::render('guardian/child-details', [
             'child' => $child,
+            'therapistAssignment' => [
+                'connectedTherapists' => $connectedTherapists,
+                'pendingAssignments' => $pendingAssignments,
+                'availableTherapists' => $availableTherapists,
+            ],
         ]);
     }
 

@@ -27,17 +27,48 @@ function ResponsiveGrid({
     '2xl': 'gap-12'
   };
 
-  // Ensure proper mobile-first responsive classes
-  const mobileColumns = Math.min(columns.mobile || 1, 2); // Max 2 columns on mobile
-  const tabletColumns = columns.tablet || Math.min((columns.mobile || 1) + 1, 4);
-  const desktopColumns = columns.desktop || tabletColumns;
+  // Use static classes instead of dynamic ones to ensure they're included in the build
+  const getMobileGridClass = (cols: number) => {
+    switch (cols) {
+      case 1: return 'grid-cols-1';
+      case 2: return 'grid-cols-2';
+      case 3: return 'grid-cols-3';
+      case 4: return 'grid-cols-4';
+      default: return 'grid-cols-1';
+    }
+  };
+
+  const getTabletGridClass = (cols: number) => {
+    switch (cols) {
+      case 1: return 'sm:grid-cols-1 md:grid-cols-1';
+      case 2: return 'sm:grid-cols-2 md:grid-cols-2';
+      case 3: return 'sm:grid-cols-2 md:grid-cols-3';
+      case 4: return 'sm:grid-cols-2 md:grid-cols-4';
+      default: return 'sm:grid-cols-2 md:grid-cols-2';
+    }
+  };
+
+  const getDesktopGridClass = (cols: number) => {
+    switch (cols) {
+      case 1: return 'lg:grid-cols-1';
+      case 2: return 'lg:grid-cols-2';
+      case 3: return 'lg:grid-cols-3';
+      case 4: return 'lg:grid-cols-4';
+      case 5: return 'lg:grid-cols-5';
+      case 6: return 'lg:grid-cols-6';
+      default: return 'lg:grid-cols-3';
+    }
+  };
+
+  const mobileColumns = Math.min(columns.mobile || 1, 4);
+  const tabletColumns = Math.min(columns.tablet || 2, 4);
+  const desktopColumns = Math.min(columns.desktop || 3, 6);
 
   const gridClasses = cn(
     "grid w-full",
-    `grid-cols-${mobileColumns}`,
-    `sm:grid-cols-${Math.min(tabletColumns, 3)}`,
-    `md:grid-cols-${tabletColumns}`,
-    `lg:grid-cols-${desktopColumns}`,
+    getMobileGridClass(mobileColumns),
+    getTabletGridClass(tabletColumns),
+    getDesktopGridClass(desktopColumns),
     gapClasses[gap],
     className
   );
