@@ -157,34 +157,73 @@ while [ $REDIS_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             # Clean up test key
             redis-cli -h redis -p 6379 del test_key >/dev/null 2>&1
             
-            # Test Laravel Redis connection
-            if php artisan tinker --execute="
+            # Test Laravel Redis connection with more detailed debugging
+            echo "Testing Laravel Redis connection with detailed debugging..."
+            php artisan tinker --execute="
             try { 
-                use Illuminate\Support\Facades\Redis; 
-                \$result = Redis::ping(); 
-                if (\$result === 'PONG' || \$result === '+PONG' || \$result === true) {
-                    echo 'REDIS_LARAVEL_OK';
+                echo 'Testing Laravel Redis connection...' . PHP_EOL;
+                
+                // Check Redis configuration
+                echo 'Redis Client: ' . config('database.redis.client') . PHP_EOL;
+                echo 'Redis Host: ' . config('database.redis.default.host') . PHP_EOL;
+                echo 'Redis Port: ' . config('database.redis.default.port') . PHP_EOL;
+                echo 'Redis DB: ' . config('database.redis.default.database') . PHP_EOL;
+                echo 'Redis Prefix: ' . config('database.redis.options.prefix') . PHP_EOL;
+                
+                // Test connection
+                use Illuminate\Support\Facades\Redis;
+                echo 'Attempting Redis ping...' . PHP_EOL;
+                \$result = Redis::ping();
+                echo 'Redis ping result: ' . var_export(\$result, true) . PHP_EOL;
+                
+                if (\$result === 'PONG' || \$result === '+PONG' || \$result === true || \$result === 1) {
+                    echo 'REDIS_LARAVEL_OK' . PHP_EOL;
                 } else {
-                    echo 'REDIS_LARAVEL_FAIL: Unexpected ping result: ' . var_export(\$result, true);
+                    echo 'REDIS_LARAVEL_FAIL: Unexpected ping result: ' . var_export(\$result, true) . PHP_EOL;
                 }
             } catch(Exception \$e) { 
-                echo 'REDIS_LARAVEL_FAIL: ' . \$e->getMessage(); 
+                echo 'REDIS_LARAVEL_FAIL: ' . \$e->getMessage() . PHP_EOL;
+                echo 'Exception Class: ' . get_class(\$e) . PHP_EOL;
+                echo 'Stack trace: ' . \$e->getTraceAsString() . PHP_EOL;
             }
-            " 2>/dev/null | grep -q "REDIS_LARAVEL_OK"; then
+            " 2>&1 | tee /tmp/redis_debug.log
+            
+            if grep -q "REDIS_LARAVEL_OK" /tmp/redis_debug.log; then
                 REDIS_READY=1
                 echo "✅ Laravel Redis connection established!"
             else
-                echo "❌ Laravel Redis connection failed, checking configuration..."
-                php artisan tinker --execute="
-                echo 'Redis Host: ' . config('database.redis.default.host');
-                echo 'Redis Port: ' . config('database.redis.default.port');
-                echo 'Redis DB: ' . config('database.redis.default.database');
-                echo 'Redis Timeout: ' . config('database.redis.default.timeout');
-                " 2>/dev/null || echo "Could not check Redis config"
+                echo "❌ Laravel Redis connection failed. Debug output:"
+                cat /tmp/redis_debug.log
                 
-                echo "Retrying Laravel Redis connection..."
-                sleep 3
-                RETRY_COUNT=$((RETRY_COUNT + 1))
+                # Try alternative connection method
+                echo "Trying alternative Redis connection method..."
+                php artisan tinker --execute="
+                try {
+                    // Try using predis client
+                    \$redis = new Predis\Client([
+                        'scheme' => 'tcp',
+                        'host'   => 'redis',
+                        'port'   => 6379,
+                        'database' => 0,
+                    ]);
+                    \$result = \$redis->ping();
+                    echo 'Predis ping result: ' . var_export(\$result, true) . PHP_EOL;
+                    echo 'PREDIS_OK' . PHP_EOL;
+                } catch (Exception \$e) {
+                    echo 'Predis failed: ' . \$e->getMessage() . PHP_EOL;
+                }
+                " 2>&1 | tee /tmp/predis_debug.log
+                
+                if grep -q "PREDIS_OK" /tmp/predis_debug.log; then
+                    echo "✅ Predis client works, switching Laravel to use Predis"
+                    # Update Laravel config to use predis
+                    export REDIS_CLIENT=predis
+                    REDIS_READY=1
+                else
+                    echo "❌ Both phpredis and predis failed"
+                    sleep 3
+                    RETRY_COUNT=\$((RETRY_COUNT + 1))
+                fi
             fi
         else
             echo "❌ Redis read/write operations failed"
