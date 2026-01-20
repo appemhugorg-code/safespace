@@ -45,6 +45,65 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        {{-- Loading fallback to prevent black screen --}}
+        <div id="app-loading" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: oklch(1 0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            font-family: 'Instrument Sans', sans-serif;
+        ">
+            <div style="text-align: center;">
+                <div style="
+                    width: 40px;
+                    height: 40px;
+                    border: 3px solid #e5e7eb;
+                    border-top: 3px solid #3b82f6;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 16px;
+                "></div>
+                <p style="color: #6b7280; margin: 0;">Loading SafeSpace...</p>
+            </div>
+        </div>
+
+        {{-- Dark mode styles for loading screen --}}
+        <style>
+            html.dark #app-loading {
+                background-color: oklch(0.145 0 0) !important;
+            }
+            html.dark #app-loading p {
+                color: #9ca3af !important;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+
         @inertia
+
+        {{-- Hide loading screen once React app is ready --}}
+        <script>
+            // Hide loading screen once the React app has rendered
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    const loadingElement = document.getElementById('app-loading');
+                    if (loadingElement) {
+                        loadingElement.style.opacity = '0';
+                        loadingElement.style.transition = 'opacity 0.3s ease-out';
+                        setTimeout(function() {
+                            loadingElement.remove();
+                        }, 300);
+                    }
+                }, 500); // Give React time to render
+            });
+        </script>
     </body>
 </html>

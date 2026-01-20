@@ -4,59 +4,12 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './contexts/theme-context';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
-import { configureEcho } from '@laravel/echo-react';
-
-configureEcho({
-    broadcaster: 'reverb',
-});
-
-// Configure Echo for Reverb
-window.Pusher = Pusher;
-
-console.log('Initializing Echo with Reverb configuration:', {
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 8082,
-});
-
-// Initialize Reverb WebSocket connection
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-    forceTLS: false,
-    enabledTransports: ['ws'],
-    disableStats: true,
-    auth: {
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        },
-    },
-});
-
-// Add connection event listeners for debugging
-window.Echo.connector.pusher.connection.bind('connected', () => {
-    console.log('✅ Echo WebSocket connected successfully');
-});
-
-window.Echo.connector.pusher.connection.bind('disconnected', () => {
-    console.log('❌ Echo WebSocket disconnected');
-});
-
-window.Echo.connector.pusher.connection.bind('error', (error: any) => {
-    console.error('❌ Echo WebSocket error:', error);
-});
-
-window.Echo.connector.pusher.connection.bind('state_change', (states: any) => {
-    console.log('🔄 Echo connection state changed:', states.previous, '→', states.current);
-});
+import { AppLoader } from './components/app-loader';
+import { Suspense } from 'react';
 
 const appName = import.meta.env.VITE_APP_NAME || 'SafeSpace';
 
+// Initialize Inertia app first (non-blocking)
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: (name) =>
@@ -67,17 +20,98 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        // Wrap the app with the comprehensive theme provider
+        // Wrap the app with providers and suspense boundary
         root.render(
             <ThemeProvider>
-                <App {...props} />
+                <Suspense fallback={<AppLoader />}>
+                    <App {...props} />
+                </Suspense>
             </ThemeProvider>
         );
     },
     progress: {
         color: '#4B5563',
+        showSpinner: true,
     },
 });
 
-// Theme system is now handled by ThemeProvider context
-// No need for manual initialization
+// Initialize Echo WebSocket connection AFTER app is rendered (non-blocking)
+setTimeout(() => {
+    try {
+        // Only initialize Echo if Reverb configuration is available
+        const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
+        const reverbHost = import.meta.env.VITE_REVERB_HOST;
+        const reverbPort = import.meta.env.VITE_REVERB_PORT;
+
+        if (!reverbKey || !reverbHost) {
+            console.warn('⚠️ Reverb configuration missing, skipping Echo initialization');
+            return;
+        }
+
+        // Dynamic imports to avoid blocking app startup
+        Promise.all([
+            import('laravel-echo'),
+            import('pusher-js'),
+            import('@laravel/echo-react')
+        ]).then(([EchoModule, PusherModule, EchoReactModule]) => {
+            const Echo = EchoModule.default;
+            const Pusher = PusherModule.default;
+            const { configureEcho } = EchoReactModule;
+
+            // Configure Echo for Reverb
+            window.Pusher = Pusher;
+            
+            configureEcho({
+                broadcaster: 'reverb',
+            });
+
+            console.log('Initializing Echo with Reverb configuration:', {
+                key: reverbKey,
+                wsHost: reverbHost,
+                wsPort: reverbPort ?? 8080,
+            });
+
+            // Initialize Reverb WebSocket connection
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: reverbKey,
+                wsHost: reverbHost,
+                wsPort: reverbPort ?? 8080,
+                wssPort: reverbPort ?? 8080,
+                forceTLS: false,
+                enabledTransports: ['ws'],
+                disableStats: true,
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                },
+            });
+
+            // Add connection event listeners for debugging
+            window.Echo.connector.pusher.connection.bind('connected', () => {
+                console.log('✅ Echo WebSocket connected successfully');
+            });
+
+            window.Echo.connector.pusher.connection.bind('disconnected', () => {
+                console.log('❌ Echo WebSocket disconnected');
+            });
+
+            window.Echo.connector.pusher.connection.bind('error', (error: any) => {
+                console.error('❌ Echo WebSocket error:', error);
+            });
+
+            window.Echo.connector.pusher.connection.bind('state_change', (states: any) => {
+                console.log('🔄 Echo connection state changed:', states.previous, '→', states.current);
+            });
+
+        }).catch((error) => {
+            console.error('❌ Failed to initialize Echo:', error);
+            console.warn('⚠️ Real-time features will not be available');
+        });
+
+    } catch (error) {
+        console.error('❌ Echo initialization error:', error);
+        console.warn('⚠️ Real-time features will not be available');
+    }
+}, 1000); // Increased delay to ensure app is fully rendered
