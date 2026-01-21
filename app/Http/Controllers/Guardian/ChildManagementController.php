@@ -51,11 +51,14 @@ class ChildManagementController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'age' => 'required|integer|min:5|max:18',
             'terms_accepted' => 'required|accepted',
+            'country_code' => 'nullable|string|max:5',
+            'phone_number' => 'nullable|string|max:20',
         ]);
 
         $guardian = auth()->user();
 
-        $child = User::create([
+        // Prepare child data
+        $childData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -64,7 +67,16 @@ class ChildManagementController extends Controller
             'terms_accepted' => true,
             'terms_accepted_at' => now(),
             'terms_version' => '1.0',
-        ]);
+        ];
+
+        // Add phone number if provided by guardian
+        if ($request->country_code && $request->phone_number) {
+            $childData['country_code'] = $request->country_code;
+            $childData['phone_number'] = $request->phone_number;
+            $childData['full_phone_number'] = $request->country_code . $request->phone_number;
+        }
+
+        $child = User::create($childData);
 
         $child->assignRole('child');
 
@@ -171,12 +183,30 @@ class ChildManagementController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:users,email,'.$child->id,
+            'country_code' => 'nullable|string|max:5',
+            'phone_number' => 'nullable|string|max:20',
         ]);
 
-        $child->update([
+        // Prepare update data
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-        ]);
+        ];
+
+        // Update phone number if provided
+        if ($request->country_code && $request->phone_number) {
+            $updateData['country_code'] = $request->country_code;
+            $updateData['phone_number'] = $request->phone_number;
+            $updateData['full_phone_number'] = $request->country_code . $request->phone_number;
+        } elseif ($request->has('country_code') && $request->has('phone_number')) {
+            // Clear phone number if empty values are submitted
+            $updateData['country_code'] = null;
+            $updateData['phone_number'] = null;
+            $updateData['full_phone_number'] = null;
+            $updateData['phone_verified_at'] = null;
+        }
+
+        $child->update($updateData);
 
         return redirect()->route('guardian.children.show', $child)
             ->with('success', "Child account for {$child->name} has been updated.");

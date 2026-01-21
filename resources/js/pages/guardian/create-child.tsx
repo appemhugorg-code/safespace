@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PhoneInput } from '@/components/ui/phone-input';
 import InputError from '@/components/input-error';
 import AppLayout from '@/layouts/app-layout';
 
@@ -17,6 +18,8 @@ export default function CreateChild() {
         password_confirmation: '',
         age: '',
         terms_accepted: false,
+        country_code: '+256',
+        phone_number: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState(false);
@@ -96,6 +99,22 @@ export default function CreateChild() {
                                     <InputError message={errors.email} />
                                     <p className="text-sm text-muted-foreground">
                                         This will be used for your child to log in to SafeSpace
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <PhoneInput
+                                        label="Phone Number (Optional)"
+                                        countryCode={data.country_code}
+                                        phoneNumber={data.phone_number}
+                                        onCountryCodeChange={(code) => setData({ ...data, country_code: code })}
+                                        onPhoneNumberChange={(phone) => setData({ ...data, phone_number: phone })}
+                                        required={false}
+                                        error={errors.phone_number || errors.country_code}
+                                        placeholder="Enter child's phone number (optional)"
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        You can add your child's phone number for emergency contact purposes
                                     </p>
                                 </div>
 

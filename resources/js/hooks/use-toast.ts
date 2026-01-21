@@ -34,6 +34,11 @@ function removeToast(id: string) {
     toastListeners.forEach(listener => listener(toasts));
 }
 
+// Standalone toast function for direct import
+export const toast = ({ title, description, variant = 'default', duration }: Omit<Toast, 'id'>) => {
+    return addToast({ title, description, variant, duration });
+};
+
 export function useToast() {
     const [toastList, setToastList] = useState<Toast[]>(toasts);
     
@@ -54,7 +59,7 @@ export function useToast() {
         return unsubscribe;
     });
     
-    const toast = useCallback(({ title, description, variant = 'default', duration }: Omit<Toast, 'id'>) => {
+    const toastFn = useCallback(({ title, description, variant = 'default', duration }: Omit<Toast, 'id'>) => {
         return addToast({ title, description, variant, duration });
     }, []);
     
@@ -63,7 +68,7 @@ export function useToast() {
     }, []);
     
     return {
-        toast,
+        toast: toastFn,
         dismiss,
         toasts: toastList,
     };

@@ -31,15 +31,28 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request, EmailNotificationService $emailService): RedirectResponse
     {
-        $request->validate([
+        $validationRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|in:guardian,therapist',
             'terms_accepted' => 'required|accepted',
-        ]);
+        ];
 
-        $user = User::create([
+        // Add phone number validation for therapists and guardians
+        if (in_array($request->role, ['therapist', 'guardian'])) {
+            $validationRules['country_code'] = 'required|string|max:5';
+            $validationRules['phone_number'] = 'required|string|max:20';
+        } else {
+            // Optional for other roles
+            $validationRules['country_code'] = 'nullable|string|max:5';
+            $validationRules['phone_number'] = 'nullable|string|max:20';
+        }
+
+        $request->validate($validationRules);
+
+        // Prepare user data
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -47,7 +60,16 @@ class RegisteredUserController extends Controller
             'terms_accepted' => true,
             'terms_accepted_at' => now(),
             'terms_version' => '1.0',
-        ]);
+        ];
+
+        // Add phone number if provided
+        if ($request->country_code && $request->phone_number) {
+            $userData['country_code'] = $request->country_code;
+            $userData['phone_number'] = $request->phone_number;
+            $userData['full_phone_number'] = $request->country_code . $request->phone_number;
+        }
+
+        $user = User::create($userData);
 
         $user->assignRole($request->role);
 

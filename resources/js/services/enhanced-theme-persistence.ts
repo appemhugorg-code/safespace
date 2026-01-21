@@ -62,30 +62,35 @@ export class EnhancedThemePersistence {
   }
 
   /**
-   * Initialize the persistence service
+   * Initialize the persistence service (non-blocking)
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
     try {
-      // Setup storage event listeners
+      // Setup storage event listeners (synchronous, fast)
       this.setupStorageListeners();
       
-      // Setup periodic sync
-      if (this.options.enableCrossDevice) {
-        this.startPeriodicSync();
-      }
-      
-      // Setup page visibility change handler
+      // Setup page visibility change handler (synchronous, fast)
       this.setupVisibilityHandler();
       
-      // Setup beforeunload handler for saving state
+      // Setup beforeunload handler (synchronous, fast)
       this.setupBeforeUnloadHandler();
       
       this.isInitialized = true;
       console.log('Enhanced Theme Persistence initialized');
+      
+      // Setup periodic sync in background (non-blocking)
+      if (this.options.enableCrossDevice) {
+        setTimeout(() => {
+          this.startPeriodicSync();
+        }, 5000); // Start periodic sync after 5 seconds
+      }
+      
     } catch (error) {
       console.error('Failed to initialize theme persistence:', error);
+      // Don't throw - allow app to continue with basic functionality
+      this.isInitialized = true; // Mark as initialized to prevent retries
     }
   }
 
@@ -185,45 +190,20 @@ export class EnhancedThemePersistence {
   }
 
   /**
-   * Load theme preferences with fallback hierarchy
+   * Load theme preferences with fallback hierarchy (non-blocking)
    */
   async loadTheme(): Promise<{ theme: ThemeConfig | null; source: string; timestamp?: Date }> {
-    // Priority order: Server -> IndexedDB -> localStorage -> sessionStorage -> defaults
+    // Priority order: localStorage -> sessionStorage -> IndexedDB -> Server (async) -> defaults
     
-    // 1. Try server first (for cross-device sync)
-    if (this.options.enableCrossDevice && navigator.onLine && this.isUserAuthenticated()) {
-      try {
-        const { theme, result } = await themeSyncService.loadFromServer();
-        if (result.success && theme) {
-          // Update local storage with server data
-          await this.updateLocalStorages(theme);
-          return { 
-            theme, 
-            source: 'server', 
-            timestamp: result.timestamp 
-          };
-        }
-      } catch (error) {
-        console.warn('Failed to load theme from server:', error);
-      }
-    }
-
-    // 2. Try IndexedDB (for offline scenarios)
-    try {
-      const indexedDBTheme = await this.loadFromIndexedDB();
-      if (indexedDBTheme.theme) {
-        return indexedDBTheme;
-      }
-    } catch (error) {
-      console.warn('Failed to load theme from IndexedDB:', error);
-    }
-
-    // 3. Try localStorage (for browser sessions)
+    // 1. Try localStorage first (fastest, synchronous)
     try {
       const localData = localStorage.getItem('safespace-theme-local');
       if (localData) {
         const parsed = JSON.parse(localData);
         if (parsed.theme && this.isValidTheme(parsed.theme)) {
+          // Start server sync in background (non-blocking)
+          this.backgroundServerSync(parsed.theme);
+          
           return {
             theme: parsed.theme,
             source: 'localStorage',
@@ -235,12 +215,15 @@ export class EnhancedThemePersistence {
       console.warn('Failed to load theme from localStorage:', error);
     }
 
-    // 4. Try sessionStorage (for page navigation)
+    // 2. Try sessionStorage (for page navigation)
     try {
       const sessionData = sessionStorage.getItem('safespace-theme-session');
       if (sessionData) {
         const parsed = JSON.parse(sessionData);
         if (parsed.theme && this.isValidTheme(parsed.theme)) {
+          // Start server sync in background (non-blocking)
+          this.backgroundServerSync(parsed.theme);
+          
           return {
             theme: parsed.theme,
             source: 'sessionStorage',
@@ -250,6 +233,50 @@ export class EnhancedThemePersistence {
       }
     } catch (error) {
       console.warn('Failed to load theme from sessionStorage:', error);
+    }
+
+    // 3. Try IndexedDB (for offline scenarios) - but don't block on it
+    try {
+      const indexedDBTheme = await Promise.race([
+        this.loadFromIndexedDB(),
+        new Promise<{ theme: null; source: string }>((resolve) => 
+          setTimeout(() => resolve({ theme: null, source: 'indexedDB-timeout' }), 1000)
+        )
+      ]);
+      
+      if (indexedDBTheme.theme) {
+        // Start server sync in background (non-blocking)
+        this.backgroundServerSync(indexedDBTheme.theme);
+        
+        return indexedDBTheme;
+      }
+    } catch (error) {
+      console.warn('Failed to load theme from IndexedDB:', error);
+    }
+
+    // 4. Try server (only if authenticated and online) - but don't block on it
+    if (this.options.enableCrossDevice && navigator.onLine && this.isUserAuthenticated()) {
+      try {
+        const serverResult = await Promise.race([
+          themeSyncService.loadFromServer(),
+          new Promise<{ theme: null; result: any }>((resolve) => 
+            setTimeout(() => resolve({ theme: null, result: { success: false, error: 'timeout' } }), 2000)
+          )
+        ]);
+        
+        if (serverResult.result.success && serverResult.theme) {
+          // Update local storage with server data (async, non-blocking)
+          this.updateLocalStorages(serverResult.theme).catch(console.warn);
+          
+          return { 
+            theme: serverResult.theme, 
+            source: 'server', 
+            timestamp: serverResult.result.timestamp 
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to load theme from server:', error);
+      }
     }
 
     // 5. Return null if no valid theme found
@@ -313,6 +340,42 @@ export class EnhancedThemePersistence {
   }
 
   // Private methods
+
+  /**
+   * Background server sync (non-blocking)
+   */
+  private backgroundServerSync(theme: Partial<ThemeConfig>): void {
+    if (!this.options.enableCrossDevice || !navigator.onLine || !this.isUserAuthenticated()) {
+      return;
+    }
+
+    // Run server sync in background without blocking
+    setTimeout(async () => {
+      try {
+        const { theme: serverTheme } = await themeSyncService.loadFromServer();
+        if (serverTheme) {
+          // Check if server theme is different from local
+          const localData = localStorage.getItem('safespace-theme-local');
+          if (localData) {
+            const parsed = JSON.parse(localData);
+            const localTimestamp = new Date(parsed.timestamp);
+            const now = new Date();
+            
+            // If server theme is newer (or significantly different), dispatch update
+            if (now.getTime() - localTimestamp.getTime() > 60000) { // 1 minute threshold
+              const customEvent = new CustomEvent('backgroundThemeSync', {
+                detail: { theme: serverTheme, timestamp: now }
+              });
+              window.dispatchEvent(customEvent);
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail background sync
+        console.debug('Background theme sync failed:', error);
+      }
+    }, 2000); // 2 second delay to not interfere with app startup
+  }
 
   private generateDeviceInfo(): DeviceInfo {
     const userAgent = navigator.userAgent;
@@ -600,26 +663,24 @@ export class EnhancedThemePersistence {
   }
 
   /**
-   * Check if user is likely authenticated
+   * Check if user is likely authenticated (simplified, non-blocking)
    */
   private isUserAuthenticated(): boolean {
-    // Check for common authentication indicators
-    const hasAuthToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    // Also check if we're on a login/register page (where user is not authenticated)
-    const isAuthPage = window.location.pathname.includes('/login') || 
-                      window.location.pathname.includes('/register') ||
-                      window.location.pathname.includes('/forgot-password') ||
-                      window.location.pathname.includes('/reset-password');
-    
-    // Check for user data in the page (Laravel often includes this)
-    const hasUserData = document.querySelector('meta[name="user"]') || 
-                       document.querySelector('[data-page]')?.textContent?.includes('"user":{') ||
-                       localStorage.getItem('user') ||
-                       sessionStorage.getItem('user');
-    
-    // Return true only if we have auth token, user data, and we're not on auth pages
-    return !!hasAuthToken && !!hasUserData && !isAuthPage;
+    try {
+      // Simple check - just look for CSRF token (most reliable indicator)
+      const hasAuthToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
+      // Quick check if we're on auth pages
+      const isAuthPage = window.location.pathname.includes('/login') || 
+                        window.location.pathname.includes('/register');
+      
+      // Return true if we have auth token and we're not on auth pages
+      return !!hasAuthToken && !isAuthPage;
+    } catch (error) {
+      // If any error occurs, assume not authenticated to avoid blocking
+      console.warn('Auth check failed, assuming not authenticated:', error);
+      return false;
+    }
   }
 
   /**

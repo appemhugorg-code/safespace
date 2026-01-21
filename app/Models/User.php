@@ -30,6 +30,10 @@ class User extends Authenticatable // implements MustVerifyEmail // Disabled unt
         'terms_accepted_at',
         'terms_version',
         'theme_preferences',
+        'country_code',
+        'phone_number',
+        'full_phone_number',
+        'phone_verified_at',
     ];
 
     /**
@@ -57,6 +61,7 @@ class User extends Authenticatable // implements MustVerifyEmail // Disabled unt
             'terms_accepted' => 'boolean',
             'terms_accepted_at' => 'datetime',
             'theme_preferences' => 'array',
+            'phone_verified_at' => 'datetime',
         ];
     }
 
@@ -608,5 +613,60 @@ class User extends Authenticatable // implements MustVerifyEmail // Disabled unt
 
         // Children cannot initiate connections
         return false;
+    }
+
+    /**
+     * Get the full formatted phone number.
+     */
+    public function getFormattedPhoneAttribute(): ?string
+    {
+        if (!$this->country_code || !$this->phone_number) {
+            return null;
+        }
+
+        return $this->country_code . ' ' . $this->phone_number;
+    }
+
+    /**
+     * Set the phone number and automatically format the full phone number.
+     */
+    public function setPhoneNumber(string $countryCode, string $phoneNumber): void
+    {
+        $this->country_code = $countryCode;
+        $this->phone_number = $phoneNumber;
+        $this->full_phone_number = $countryCode . $phoneNumber;
+    }
+
+    /**
+     * Check if user has a phone number.
+     */
+    public function hasPhoneNumber(): bool
+    {
+        return !empty($this->country_code) && !empty($this->phone_number);
+    }
+
+    /**
+     * Check if user's phone number is verified.
+     */
+    public function hasVerifiedPhoneNumber(): bool
+    {
+        return $this->hasPhoneNumber() && !is_null($this->phone_verified_at);
+    }
+
+    /**
+     * Mark phone number as verified.
+     */
+    public function markPhoneAsVerified(): void
+    {
+        $this->phone_verified_at = now();
+        $this->save();
+    }
+
+    /**
+     * Check if phone number is required for this user role.
+     */
+    public function isPhoneNumberRequired(): bool
+    {
+        return $this->hasAnyRole(['therapist', 'guardian']);
     }
 }

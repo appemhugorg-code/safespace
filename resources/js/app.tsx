@@ -20,7 +20,7 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        // Wrap the app with providers and suspense boundary
+        // Use enhanced theme provider with full features
         root.render(
             <ThemeProvider>
                 <Suspense fallback={<AppLoader />}>

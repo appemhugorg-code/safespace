@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { themeSyncService } from '@/services/theme-sync-service';
 import { enhancedThemePersistence } from '@/services/enhanced-theme-persistence';
-import { getTherapeuticColors, lightTherapeuticColors, darkTherapeuticColors } from '@/config/therapeutic-colors';
+import { lightTherapeuticColors, darkTherapeuticColors } from '@/config/therapeutic-colors';
 
 // Theme configuration types
 export type ThemeMode = 'light' | 'dark' | 'auto';
@@ -241,13 +241,11 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: Partial<ThemeConfig>;
-  storageKey?: string;
 }
 
 export function ThemeProvider({ 
   children, 
-  defaultTheme: customDefaultTheme,
-  storageKey = 'safespace-theme' 
+  defaultTheme: customDefaultTheme
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeConfig>(() => {
     return { ...defaultTheme, ...customDefaultTheme };
@@ -257,14 +255,14 @@ export function ThemeProvider({
   const [syncStatus, setSyncStatus] = useState(themeSyncService.getSyncStatus());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize enhanced persistence on mount
+  // Initialize enhanced persistence on mount (non-blocking)
   useEffect(() => {
     const initializePersistence = async () => {
       try {
-        // Initialize the enhanced persistence service
+        // Initialize the enhanced persistence service (fast, non-blocking)
         await enhancedThemePersistence.initialize();
         
-        // Load theme from persistence layers
+        // Load theme from persistence layers (prioritize local storage for speed)
         const { theme: persistedTheme, source } = await enhancedThemePersistence.loadTheme();
         
         if (persistedTheme) {
@@ -272,17 +270,19 @@ export function ThemeProvider({
           setThemeState(prev => ({ ...prev, ...persistedTheme }));
         } else {
           console.log('No persisted theme found, using defaults');
-          // Save default theme to establish persistence
-          await enhancedThemePersistence.saveTheme({ ...defaultTheme, ...customDefaultTheme });
+          // Save default theme to establish persistence (async, non-blocking)
+          enhancedThemePersistence.saveTheme({ ...defaultTheme, ...customDefaultTheme }).catch(console.warn);
         }
       } catch (error) {
         console.error('Failed to initialize theme persistence:', error);
+        // Don't block app - continue with default theme
       } finally {
         setIsLoading(false);
       }
     };
 
     if (typeof window !== 'undefined') {
+      // Start initialization immediately but don't block rendering
       initializePersistence();
     } else {
       setIsLoading(false);

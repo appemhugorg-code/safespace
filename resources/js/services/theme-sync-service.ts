@@ -70,26 +70,24 @@ export class ThemeSyncService {
   }
 
   /**
-   * Check if user is authenticated before making API calls
+   * Check if user is authenticated before making API calls (simplified, non-blocking)
    */
   private isUserAuthenticated(): boolean {
-    // Check for common authentication indicators
-    const hasAuthToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    // Also check if we're on a login/register page (where user is not authenticated)
-    const isAuthPage = window.location.pathname.includes('/login') || 
-                      window.location.pathname.includes('/register') ||
-                      window.location.pathname.includes('/forgot-password') ||
-                      window.location.pathname.includes('/reset-password');
-    
-    // Check for user data in the page (Laravel often includes this)
-    const hasUserData = document.querySelector('meta[name="user"]') || 
-                       document.querySelector('[data-page]')?.textContent?.includes('"user":{') ||
-                       localStorage.getItem('user') ||
-                       sessionStorage.getItem('user');
-    
-    // Return true only if we have auth token, user data, and we're not on auth pages
-    return !!hasAuthToken && !!hasUserData && !isAuthPage;
+    try {
+      // Simple check - just look for CSRF token (most reliable indicator)
+      const hasAuthToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      
+      // Quick check if we're on auth pages
+      const isAuthPage = window.location.pathname.includes('/login') || 
+                        window.location.pathname.includes('/register');
+      
+      // Return true if we have auth token and we're not on auth pages
+      return !!hasAuthToken && !isAuthPage;
+    } catch (error) {
+      // If any error occurs, assume not authenticated to avoid blocking
+      console.warn('Auth check failed, assuming not authenticated:', error);
+      return false;
+    }
   }
 
   /**
