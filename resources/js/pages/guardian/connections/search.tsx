@@ -84,7 +84,7 @@ export default function GuardianTherapistSearch({ therapists, recommended_therap
 
     const submitRequest = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/api/guardian/connection-requests', {
+        post('/guardian/connections/requests', {
             onSuccess: () => {
                 toast.success('Connection request sent successfully!');
                 setShowRequestDialog(false);

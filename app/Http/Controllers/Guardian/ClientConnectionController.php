@@ -178,7 +178,7 @@ class ClientConnectionController extends Controller
      * Create a connection request to a therapist.
      * Requirements: 6.3
      */
-    public function createRequest(CreateConnectionRequestRequest $request): JsonResponse
+    public function createRequest(CreateConnectionRequestRequest $request)
     {
         try {
             $guardian = $request->user();
@@ -191,6 +191,12 @@ class ClientConnectionController extends Controller
 
             $therapist = User::findOrFail($request->validated('therapist_id'));
 
+            // Check if this is an Inertia request
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->with('success', 'Connection request sent successfully to ' . $therapist->name . '.');
+            }
+
+            // Return JSON for API requests
             return $this->successResponse(
                 'Connection request sent successfully.',
                 [
@@ -208,6 +214,11 @@ class ClientConnectionController extends Controller
                 201
             );
         } catch (Exception $e) {
+            // Check if this is an Inertia request for error handling too
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->withErrors(['message' => 'Failed to send connection request. Please try again.']);
+            }
+            
             return $this->handleConnectionError($e, 'Failed to create connection request.');
         }
     }
@@ -331,7 +342,7 @@ class ClientConnectionController extends Controller
     /**
      * Cancel a pending connection request.
      */
-    public function cancelRequest(Request $request, int $requestId): JsonResponse
+    public function cancelRequest(Request $request, int $requestId)
     {
         try {
             $guardian = $request->user();
@@ -341,13 +352,27 @@ class ClientConnectionController extends Controller
             $permissionCheck = $this->validateRequestPermission($connectionRequest, $guardian->id, 'cancel');
             
             if ($permissionCheck !== true) {
+                // Check if this is an Inertia request for error handling
+                if ($request->header('X-Inertia')) {
+                    return redirect()->back()->withErrors(['message' => 'You do not have permission to cancel this request.']);
+                }
                 return $permissionCheck;
             }
 
             $success = $this->requestService->cancelRequest($requestId, $guardian->id);
 
             if ($success) {
+                // Check if this is an Inertia request
+                if ($request->header('X-Inertia')) {
+                    return redirect()->back()->with('success', 'Connection request cancelled successfully.');
+                }
+                
                 return $this->successResponse('Request cancelled successfully.');
+            }
+
+            // Check if this is an Inertia request for error handling
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->withErrors(['message' => 'Failed to cancel request. Please try again.']);
             }
 
             return $this->errorResponse(
@@ -357,6 +382,11 @@ class ClientConnectionController extends Controller
                 500
             );
         } catch (Exception $e) {
+            // Check if this is an Inertia request for error handling
+            if ($request->header('X-Inertia')) {
+                return redirect()->back()->withErrors(['message' => 'Failed to cancel request. Please try again.']);
+            }
+            
             return $this->handleConnectionError($e, 'Failed to cancel request.');
         }
     }

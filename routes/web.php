@@ -64,6 +64,10 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
         Route::get('/connections/children', [\App\Http\Controllers\Therapist\TherapistConnectionController::class, 'children'])->name('connections.children');
         Route::get('/connections/requests', [\App\Http\Controllers\Therapist\TherapistConnectionController::class, 'pendingRequests'])->name('connections.requests');
         Route::get('/connections/{connection}', [\App\Http\Controllers\Therapist\TherapistConnectionController::class, 'show'])->name('connections.show');
+        
+        // Connection request approval/decline routes
+        Route::post('/requests/{request}/approve', [\App\Http\Controllers\Therapist\TherapistConnectionController::class, 'approveRequest'])->name('requests.approve');
+        Route::post('/requests/{request}/decline', [\App\Http\Controllers\Therapist\TherapistConnectionController::class, 'declineRequest'])->name('requests.decline');
     });
 
     // Therapist client management routes

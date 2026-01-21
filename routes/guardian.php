@@ -29,5 +29,9 @@ Route::middleware(['auth', 'active', 'role:guardian'])->prefix('guardian')->name
         Route::get('/search', [ClientConnectionController::class, 'searchTherapists'])->name('search');
         Route::get('/child-assignment', [ClientConnectionController::class, 'childAssignment'])->name('child-assignment');
         Route::get('/{connection}', [ClientConnectionController::class, 'show'])->name('show');
+        
+        // Connection request routes
+        Route::post('/requests', [ClientConnectionController::class, 'createRequest'])->name('requests.store');
+        Route::delete('/requests/{request}', [ClientConnectionController::class, 'cancelRequest'])->name('requests.destroy');
     });
 });

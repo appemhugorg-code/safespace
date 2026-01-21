@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Clock, Check, X, User, Users, MessageCircle, Calendar } from 'lucide-react';
 import { useState } from 'react';
 
@@ -48,50 +48,50 @@ export default function TherapistPendingRequests({ requests, stats }: Props) {
     const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
     const { toast } = useToast();
 
-    const handleRequestAction = async (requestId: number, action: 'approve' | 'decline') => {
+    // Use Inertia forms for approve and decline actions
+    const approveForm = useForm({});
+    const declineForm = useForm({});
+
+    const handleRequestAction = (requestId: number, action: 'approve' | 'decline') => {
         if (processingRequests.has(requestId)) return;
 
         setProcessingRequests(prev => new Set(prev).add(requestId));
 
-        try {
-            const response = await fetch(`/api/therapist/requests/${requestId}/${action}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
+        const form = action === 'approve' ? approveForm : declineForm;
+        const url = `/therapist/requests/${requestId}/${action}`;
 
-            const data = await response.json();
-
-            if (data.success) {
+        form.post(url, {
+            onSuccess: (page) => {
                 toast({
                     title: action === 'approve' ? 'Request Approved' : 'Request Declined',
-                    description: data.message,
+                    description: `Connection request ${action}d successfully.`,
                 });
-
-                // Refresh the page to show updated data
-                router.reload();
-            } else {
+                setProcessingRequests(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(requestId);
+                    return newSet;
+                });
+            },
+            onError: (errors) => {
                 toast({
                     title: 'Error',
-                    description: data.message || `Failed to ${action} request`,
+                    description: `Failed to ${action} request. Please try again.`,
                     variant: 'destructive',
                 });
+                setProcessingRequests(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(requestId);
+                    return newSet;
+                });
+            },
+            onFinish: () => {
+                setProcessingRequests(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(requestId);
+                    return newSet;
+                });
             }
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: `An error occurred while processing the request`,
-                variant: 'destructive',
-            });
-        } finally {
-            setProcessingRequests(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(requestId);
-                return newSet;
-            });
-        }
+        });
     };
 
     const getRequestTypeBadge = (request: PendingRequest) => {

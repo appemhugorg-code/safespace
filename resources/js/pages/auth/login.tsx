@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 
 interface LoginProps {
@@ -17,6 +17,7 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: LoginProps) {
+    const { flash } = usePage().props as any;
     return (
         <AuthLayout
             title="Log in to your account"
@@ -105,9 +106,21 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 )}
             </Form>
 
-            {status && (
+            {(status || flash?.success) && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
+                    {status || flash?.success}
+                </div>
+            )}
+
+            {flash?.error && (
+                <div className="mb-4 text-center text-sm font-medium text-red-600">
+                    {flash.error}
+                </div>
+            )}
+
+            {flash?.warning && (
+                <div className="mb-4 text-center text-sm font-medium text-yellow-600">
+                    {flash.warning}
                 </div>
             )}
         </AuthLayout>

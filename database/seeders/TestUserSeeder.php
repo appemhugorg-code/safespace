@@ -24,6 +24,9 @@ class TestUserSeeder extends Seeder
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
                 'status' => 'active',
+                'phone_number' => '782123456',
+                'country_code' => '+256',
+                'full_phone_number' => '+256782123456'
             ]
         );
         $admin->assignRole('admin');
@@ -35,6 +38,9 @@ class TestUserSeeder extends Seeder
                 'name' => 'Therapist Talia',
                 'password' => Hash::make('password'),
                 'status' => 'active',
+                'phone_number' => '702123456',
+                'country_code' => '+256',
+                'full_phone_number' => '+256702123456'
             ]
         );
         $therapist->assignRole('therapist');
@@ -46,6 +52,9 @@ class TestUserSeeder extends Seeder
                 'name' => 'Guardian Grace',
                 'password' => Hash::make('password'),
                 'status' => 'active',
+                'phone_number' => '792123456',
+                'country_code' => '+256',
+                'full_phone_number' => '+256792123456'
             ]
         );
         $guardian->assignRole('guardian');

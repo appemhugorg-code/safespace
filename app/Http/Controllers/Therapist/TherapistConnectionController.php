@@ -276,7 +276,7 @@ class TherapistConnectionController extends Controller
     /**
      * Approve a connection request.
      */
-    public function approveRequest(Request $request, int $requestId): JsonResponse
+    public function approveRequest(Request $request, int $requestId)
     {
         try {
             $therapist = $request->user();
@@ -285,30 +285,39 @@ class TherapistConnectionController extends Controller
             $connectionRequest = \App\Models\ConnectionRequest::find($requestId);
             
             if (!$connectionRequest) {
-                return $this->errorResponse(
-                    'REQUEST_NOT_FOUND',
-                    'Connection request not found.',
-                    [],
-                    404
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'REQUEST_NOT_FOUND',
+                        'Connection request not found.',
+                        [],
+                        404
+                    );
+                }
+                return back()->withErrors(['error' => 'Connection request not found.']);
             }
             
             if ($connectionRequest->target_therapist_id !== $therapist->id) {
-                return $this->errorResponse(
-                    'UNAUTHORIZED',
-                    'You are not authorized to process this request.',
-                    [],
-                    403
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'UNAUTHORIZED',
+                        'You are not authorized to process this request.',
+                        [],
+                        403
+                    );
+                }
+                return back()->withErrors(['error' => 'You are not authorized to process this request.']);
             }
             
             if ($connectionRequest->status !== 'pending') {
-                return $this->errorResponse(
-                    'REQUEST_ALREADY_PROCESSED',
-                    'This request has already been processed.',
-                    [],
-                    400
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'REQUEST_ALREADY_PROCESSED',
+                        'This request has already been processed.',
+                        [],
+                        400
+                    );
+                }
+                return back()->withErrors(['error' => 'This request has already been processed.']);
             }
 
             $success = $this->requestService->processRequest($requestId, 'approve', $therapist->id);
@@ -320,27 +329,36 @@ class TherapistConnectionController extends Controller
                     ->latest()
                     ->first();
 
-                return $this->successResponse(
-                    'Connection request approved successfully.',
-                    [
-                        'connection' => [
-                            'id' => $connection->id,
-                            'therapist_id' => $connection->therapist_id,
-                            'client_id' => $connection->client_id,
-                            'status' => $connection->status,
-                            'connection_type' => $connection->connection_type,
-                            'assigned_at' => $connection->assigned_at,
+                if ($request->wantsJson()) {
+                    return $this->successResponse(
+                        'Connection request approved successfully.',
+                        [
+                            'connection' => [
+                                'id' => $connection->id,
+                                'therapist_id' => $connection->therapist_id,
+                                'client_id' => $connection->client_id,
+                                'status' => $connection->status,
+                                'connection_type' => $connection->connection_type,
+                                'assigned_at' => $connection->assigned_at,
+                            ]
                         ]
-                    ]
-                );
+                    );
+                }
+
+                return redirect()->route('therapist.connections.requests')
+                    ->with('success', 'Connection request approved successfully.');
             }
 
-            return $this->errorResponse(
-                'APPROVAL_FAILED',
-                'Failed to approve connection request.',
-                [],
-                500
-            );
+            if ($request->wantsJson()) {
+                return $this->errorResponse(
+                    'APPROVAL_FAILED',
+                    'Failed to approve connection request.',
+                    [],
+                    500
+                );
+            }
+            return back()->withErrors(['error' => 'Failed to approve connection request.']);
+
         } catch (\Exception $e) {
             // Log the actual error for debugging
             \Log::error('Connection request approval failed', [
@@ -350,23 +368,26 @@ class TherapistConnectionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return $this->errorResponse(
-                'APPROVAL_ERROR',
-                'An error occurred while processing the request: ' . $e->getMessage(),
-                [
-                    'error_details' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ],
-                500
-            );
+            if ($request->wantsJson()) {
+                return $this->errorResponse(
+                    'APPROVAL_ERROR',
+                    'An error occurred while processing the request: ' . $e->getMessage(),
+                    [
+                        'error_details' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ],
+                    500
+                );
+            }
+            return back()->withErrors(['error' => 'An error occurred while processing the request.']);
         }
     }
 
     /**
      * Decline a connection request.
      */
-    public function declineRequest(Request $request, int $requestId): JsonResponse
+    public function declineRequest(Request $request, int $requestId)
     {
         try {
             $therapist = $request->user();
@@ -375,44 +396,61 @@ class TherapistConnectionController extends Controller
             $connectionRequest = \App\Models\ConnectionRequest::find($requestId);
             
             if (!$connectionRequest) {
-                return $this->errorResponse(
-                    'REQUEST_NOT_FOUND',
-                    'Connection request not found.',
-                    [],
-                    404
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'REQUEST_NOT_FOUND',
+                        'Connection request not found.',
+                        [],
+                        404
+                    );
+                }
+                return back()->withErrors(['error' => 'Connection request not found.']);
             }
             
             if ($connectionRequest->target_therapist_id !== $therapist->id) {
-                return $this->errorResponse(
-                    'UNAUTHORIZED',
-                    'You are not authorized to process this request.',
-                    [],
-                    403
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'UNAUTHORIZED',
+                        'You are not authorized to process this request.',
+                        [],
+                        403
+                    );
+                }
+                return back()->withErrors(['error' => 'You are not authorized to process this request.']);
             }
             
             if ($connectionRequest->status !== 'pending') {
-                return $this->errorResponse(
-                    'REQUEST_ALREADY_PROCESSED',
-                    'This request has already been processed.',
-                    [],
-                    400
-                );
+                if ($request->wantsJson()) {
+                    return $this->errorResponse(
+                        'REQUEST_ALREADY_PROCESSED',
+                        'This request has already been processed.',
+                        [],
+                        400
+                    );
+                }
+                return back()->withErrors(['error' => 'This request has already been processed.']);
             }
 
             $success = $this->requestService->processRequest($requestId, 'decline', $therapist->id);
 
             if ($success) {
-                return $this->successResponse('Connection request declined successfully.');
+                if ($request->wantsJson()) {
+                    return $this->successResponse('Connection request declined successfully.');
+                }
+                return redirect()->route('therapist.connections.requests')
+                    ->with('success', 'Connection request declined successfully.');
             }
 
-            return $this->errorResponse(
-                'DECLINE_FAILED',
-                'Failed to decline connection request.',
-                [],
-                500
-            );
+            if ($request->wantsJson()) {
+                return $this->errorResponse(
+                    'DECLINE_FAILED',
+                    'Failed to decline connection request.',
+                    [],
+                    500
+                );
+            }
+            return back()->withErrors(['error' => 'Failed to decline connection request.']);
+
         } catch (\Exception $e) {
             // Log the actual error for debugging
             \Log::error('Connection request decline failed', [
@@ -422,16 +460,19 @@ class TherapistConnectionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return $this->errorResponse(
-                'DECLINE_ERROR',
-                'An error occurred while processing the request: ' . $e->getMessage(),
-                [
-                    'error_details' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ],
-                500
-            );
+            if ($request->wantsJson()) {
+                return $this->errorResponse(
+                    'DECLINE_ERROR',
+                    'An error occurred while processing the request: ' . $e->getMessage(),
+                    [
+                        'error_details' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ],
+                    500
+                );
+            }
+            return back()->withErrors(['error' => 'An error occurred while processing the request.']);
         }
     }
 

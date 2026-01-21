@@ -44,6 +44,33 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
 
+        // Custom authentication logic to prevent pending users from logging in
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = User::where('email', $request->email)->first();
+
+            if ($user && \Hash::check($request->password, $user->password)) {
+                // Check if user status allows login
+                if ($user->status !== 'active') {
+                    $message = match ($user->status) {
+                        'pending' => 'Your account is pending approval. Please wait for admin approval before signing in.',
+                        'suspended' => 'Your account has been suspended. Please contact support for more information.',
+                        'disabled' => 'Your account has been disabled. Please contact support.',
+                        'deleted' => 'Your account has been deleted.',
+                        default => 'Your account is not active. Please contact support.',
+                    };
+
+                    // Throw validation exception to show error on login form
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'email' => [$message],
+                    ]);
+                }
+
+                return $user;
+            }
+
+            return null;
+        });
+
         // Customize email verification notification
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
             try {

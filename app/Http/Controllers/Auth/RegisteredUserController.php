@@ -81,10 +81,13 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // DO NOT log in the user - they need admin approval first
+        // Auth::login($user);
+        // $request->session()->regenerate();
 
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect to login page with success message
+        return redirect()->route('login')->with('success', 
+            'Registration successful! Your account is pending approval. You will be able to sign in once an administrator approves your account.'
+        );
     }
 }
