@@ -315,64 +315,6 @@ export default function ArticlesIndex({ articles, canCreate }: Props) {
                         )}
                     </TabsContent>
                 </Tabs>
-                                <Card key={article.id} className="flex flex-col">
-                                    {article.featured_image && (
-                                        <img
-                                            src={article.featured_image}
-                                            alt={article.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
-                                        />
-                                    )}
-                                    <CardHeader>
-                                        <div className="mb-2 flex flex-wrap gap-2">
-                                            {article.categories.map((category, index) => (
-                                                <Badge key={index} variant="secondary">
-                                                    {category}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                        <CardTitle className="line-clamp-2">
-                                            <Link
-                                                href={route('articles.show', article.slug)}
-                                                className="hover:underline"
-                                            >
-                                                {article.title}
-                                            </Link>
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-3">
-                                            {article.excerpt}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="mt-auto">
-                                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                            <span>By {article.author.name}</span>
-                                            <div className="flex items-center gap-3">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="h-4 w-4" />
-                                                    {article.reading_time} min
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Eye className="h-4 w-4" />
-                                                    {article.view_count}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 flex gap-2">
-                                            <Button asChild className="flex-1">
-                                                <Link href={route('articles.show', article.slug)}>
-                                                    Read Article
-                                                </Link>
-                                            </Button>
-                                            <Button variant="outline" size="icon">
-                                                <BookmarkIcon className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </div>
             </div>
         </AppLayout>
     );
