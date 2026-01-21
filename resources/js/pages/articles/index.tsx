@@ -48,6 +48,19 @@ export default function ArticlesIndex({ articles, canCreate }: Props) {
         }
     };
 
+    const getFilteredArticles = (filter: string) => {
+        let filtered = search ? filteredArticles : articles;
+        
+        switch (filter) {
+            case 'popular':
+                return filtered.sort((a, b) => b.view_count - a.view_count);
+            case 'recent':
+                return filtered.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+            default:
+                return filtered;
+        }
+    };
+
     return (
         <AppLayout>
             <Head title="Articles & Resources" />
@@ -67,8 +80,19 @@ export default function ArticlesIndex({ articles, canCreate }: Props) {
                         )}
                 </div>
 
-                {/* Search */}
-                <div>
+                {/* Navigation Tabs */}
+                <Tabs defaultValue="all" className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="all">All Articles</TabsTrigger>
+                        <TabsTrigger value="popular">
+                            <TrendingUp className="h-4 w-4 mr-1" />
+                            Popular
+                        </TabsTrigger>
+                        <TabsTrigger value="recent">Recent</TabsTrigger>
+                    </TabsList>
+
+                    {/* Search */}
+                    <div>
                         <Input
                             type="search"
                             placeholder="Search articles..."
@@ -76,21 +100,221 @@ export default function ArticlesIndex({ articles, canCreate }: Props) {
                             onChange={(e) => handleSearch(e.target.value)}
                             className="max-w-md"
                         />
-                </div>
+                    </div>
 
-                {/* Articles Grid */}
-                <div>
-                    {filteredArticles.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <p className="text-muted-foreground">
-                                    {search ? 'No articles found matching your search.' : 'No articles available yet.'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {filteredArticles.map((article) => (
+                    <TabsContent value="all" className="space-y-4">
+                        {getFilteredArticles('all').length === 0 ? (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <p className="text-muted-foreground">
+                                        {search ? 'No articles found matching your search.' : 'No articles available yet.'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {getFilteredArticles('all').map((article) => (
+                                    <Card key={article.id} className="flex flex-col">
+                                        {article.featured_image && (
+                                            <img
+                                                src={article.featured_image}
+                                                alt={article.title}
+                                                className="h-48 w-full rounded-t-lg object-cover"
+                                            />
+                                        )}
+                                        <CardHeader>
+                                            <div className="mb-2 flex flex-wrap gap-2">
+                                                {article.categories.map((category, index) => (
+                                                    <Badge key={index} variant="secondary">
+                                                        {category}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                            <CardTitle className="line-clamp-2">
+                                                <Link
+                                                    href={route('articles.show', article.slug)}
+                                                    className="hover:underline"
+                                                >
+                                                    {article.title}
+                                                </Link>
+                                            </CardTitle>
+                                            <CardDescription className="line-clamp-3">
+                                                {article.excerpt}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="mt-auto">
+                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                <span>By {article.author.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-4 w-4" />
+                                                        {article.reading_time} min
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Eye className="h-4 w-4" />
+                                                        {article.view_count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex gap-2">
+                                                <Button asChild className="flex-1">
+                                                    <Link href={route('articles.show', article.slug)}>
+                                                        Read Article
+                                                    </Link>
+                                                </Button>
+                                                <Button variant="outline" size="icon">
+                                                    <BookmarkIcon className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="popular" className="space-y-4">
+                        {getFilteredArticles('popular').length === 0 ? (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <p className="text-muted-foreground">
+                                        {search ? 'No popular articles found matching your search.' : 'No popular articles available yet.'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {getFilteredArticles('popular').map((article) => (
+                                    <Card key={article.id} className="flex flex-col">
+                                        {article.featured_image && (
+                                            <img
+                                                src={article.featured_image}
+                                                alt={article.title}
+                                                className="h-48 w-full rounded-t-lg object-cover"
+                                            />
+                                        )}
+                                        <CardHeader>
+                                            <div className="mb-2 flex flex-wrap gap-2">
+                                                {article.categories.map((category, index) => (
+                                                    <Badge key={index} variant="secondary">
+                                                        {category}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                            <CardTitle className="line-clamp-2">
+                                                <Link
+                                                    href={route('articles.show', article.slug)}
+                                                    className="hover:underline"
+                                                >
+                                                    {article.title}
+                                                </Link>
+                                            </CardTitle>
+                                            <CardDescription className="line-clamp-3">
+                                                {article.excerpt}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="mt-auto">
+                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                <span>By {article.author.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-4 w-4" />
+                                                        {article.reading_time} min
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Eye className="h-4 w-4" />
+                                                        {article.view_count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex gap-2">
+                                                <Button asChild className="flex-1">
+                                                    <Link href={route('articles.show', article.slug)}>
+                                                        Read Article
+                                                    </Link>
+                                                </Button>
+                                                <Button variant="outline" size="icon">
+                                                    <BookmarkIcon className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="recent" className="space-y-4">
+                        {getFilteredArticles('recent').length === 0 ? (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <p className="text-muted-foreground">
+                                        {search ? 'No recent articles found matching your search.' : 'No recent articles available yet.'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {getFilteredArticles('recent').map((article) => (
+                                    <Card key={article.id} className="flex flex-col">
+                                        {article.featured_image && (
+                                            <img
+                                                src={article.featured_image}
+                                                alt={article.title}
+                                                className="h-48 w-full rounded-t-lg object-cover"
+                                            />
+                                        )}
+                                        <CardHeader>
+                                            <div className="mb-2 flex flex-wrap gap-2">
+                                                {article.categories.map((category, index) => (
+                                                    <Badge key={index} variant="secondary">
+                                                        {category}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                            <CardTitle className="line-clamp-2">
+                                                <Link
+                                                    href={route('articles.show', article.slug)}
+                                                    className="hover:underline"
+                                                >
+                                                    {article.title}
+                                                </Link>
+                                            </CardTitle>
+                                            <CardDescription className="line-clamp-3">
+                                                {article.excerpt}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="mt-auto">
+                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                                <span>By {article.author.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-4 w-4" />
+                                                        {article.reading_time} min
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Eye className="h-4 w-4" />
+                                                        {article.view_count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex gap-2">
+                                                <Button asChild className="flex-1">
+                                                    <Link href={route('articles.show', article.slug)}>
+                                                        Read Article
+                                                    </Link>
+                                                </Button>
+                                                <Button variant="outline" size="icon">
+                                                    <BookmarkIcon className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
                                 <Card key={article.id} className="flex flex-col">
                                     {article.featured_image && (
                                         <img

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { Users, UserCheck, UserPlus, Clock, Calendar, MessageCircle, Eye } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -189,16 +190,16 @@ export default function TherapistConnections({ guardians, children, pending_requ
                     </Card>
                 </div>
 
-                {/* Tabs for different views */}
+                {/* Navigation Tabs - Using standard tabs component for consistent styling */}
                 <Tabs defaultValue="overview" className="animate-scale-in">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList>
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="guardians">Guardians ({stats.total_guardians})</TabsTrigger>
                         <TabsTrigger value="children">Children ({stats.total_children})</TabsTrigger>
                         <TabsTrigger value="requests">
                             Requests ({stats.pending_requests})
                             {stats.pending_requests > 0 && (
-                                <Badge className="ml-2 bg-red-500 text-white">{stats.pending_requests}</Badge>
+                                <Badge className="ml-2 bg-red-500 text-white text-xs">{stats.pending_requests}</Badge>
                             )}
                         </TabsTrigger>
                     </TabsList>
