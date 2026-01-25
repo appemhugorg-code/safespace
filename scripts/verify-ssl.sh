@@ -82,8 +82,8 @@ fi
 
 # Test 6: Container health
 print_test "Docker containers"
-RUNNING_CONTAINERS=$(docker-compose -f docker-compose.yml -f docker-compose.ssl.yml ps --services --filter "status=running" | wc -l)
-TOTAL_CONTAINERS=$(docker-compose -f docker-compose.yml -f docker-compose.ssl.yml ps --services | wc -l)
+RUNNING_CONTAINERS=$(docker compose -f docker compose.yml -f docker compose.ssl.yml ps --services --filter "status=running" | wc -l)
+TOTAL_CONTAINERS=$(docker compose -f docker compose.yml -f docker compose.ssl.yml ps --services | wc -l)
 
 if [ "$RUNNING_CONTAINERS" -eq "$TOTAL_CONTAINERS" ]; then
     print_pass

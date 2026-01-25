@@ -39,13 +39,13 @@ mkdir -p ./certbot/www
 ```bash
 # Use init config for certificate generation
 cp docker/nginx/init.conf docker/nginx/default.conf
-docker-compose -f docker-compose.yml up -d nginx
+docker compose -f docker compose.yml up -d nginx
 ```
 
 ### 3. Obtain SSL Certificate
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certonly \
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email admin@emhug.org \
@@ -61,7 +61,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot 
 cp .env.production.ssl .env.production
 
 # Start with SSL configuration
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 ```
 
 ## File Structure
@@ -78,7 +78,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
 ├── certbot/
 │   ├── conf/                 # SSL certificates
 │   └── www/                  # Challenge files
-├── docker-compose.ssl.yml    # SSL-enabled compose file
+├── docker compose.ssl.yml    # SSL-enabled compose file
 ├── .env.production.ssl       # SSL environment config
 └── README-SSL.md            # This file
 ```
@@ -98,7 +98,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
 - WSS for WebSockets
 - SSL-specific Laravel settings
 
-### Docker Compose SSL (`docker-compose.ssl.yml`)
+### Docker Compose SSL (`docker compose.ssl.yml`)
 - SSL port mappings (80, 443)
 - Certificate volume mounts
 - Certbot service configuration
@@ -127,10 +127,10 @@ crontab -e
 
 ```bash
 # Check expiration
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certificates
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certificates
 
 # Test renewal (dry run)
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot renew --dry-run
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot renew --dry-run
 ```
 
 ## Troubleshooting
@@ -149,7 +149,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot 
 
 3. **Nginx Logs**: Check for errors
    ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml logs nginx
+   docker compose -f docker compose.yml -f docker compose.ssl.yml logs nginx
    ```
 
 ### SSL Not Working
@@ -161,7 +161,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot 
 
 2. **Nginx Configuration**: Test config syntax
    ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml exec nginx nginx -t
+   docker compose -f docker compose.yml -f docker compose.ssl.yml exec nginx nginx -t
    ```
 
 3. **SSL Test**: Use online SSL checker
@@ -196,20 +196,20 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot 
 
 ```bash
 # Start with SSL
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 
 # View logs
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml logs
+docker compose -f docker compose.yml -f docker compose.ssl.yml logs
 
 # Restart services
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml restart
+docker compose -f docker compose.yml -f docker compose.ssl.yml restart
 
 # Stop services
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml down
+docker compose -f docker compose.yml -f docker compose.ssl.yml down
 
 # Renew certificates
 ./scripts/renew-ssl.sh
 
 # Check certificate status
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certificates
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certificates
 ```

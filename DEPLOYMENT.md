@@ -79,16 +79,16 @@ REVERB_SCHEME=wss  # Use 'wss' for HTTPS, 'ws' for HTTP
 ### Manual Service Management
 ```bash
 # Check all processes
-docker-compose exec safespace-app supervisorctl status
+docker compose exec safespace-app supervisorctl status
 
 # Restart queue workers
-docker-compose exec safespace-app supervisorctl restart laravel-queue-worker:*
+docker compose exec safespace-app supervisorctl restart laravel-queue-worker:*
 
 # Restart Reverb server
-docker-compose exec safespace-app supervisorctl restart laravel-reverb
+docker compose exec safespace-app supervisorctl restart laravel-reverb
 
 # View logs
-docker-compose logs -f safespace-app
+docker compose logs -f safespace-app
 ```
 
 ## SSL/TLS Configuration (Production)
@@ -130,12 +130,12 @@ For production with HTTPS, you need to:
 
 1. **Check queue workers:**
    ```bash
-   docker-compose exec safespace-app supervisorctl status laravel-queue-worker:*
+   docker compose exec safespace-app supervisorctl status laravel-queue-worker:*
    ```
 
 2. **Check Reverb server:**
    ```bash
-   docker-compose exec safespace-app supervisorctl status laravel-reverb
+   docker compose exec safespace-app supervisorctl status laravel-reverb
    ```
 
 3. **Test WebSocket connection:**
@@ -147,17 +147,17 @@ For production with HTTPS, you need to:
 
 1. **Check Redis connection:**
    ```bash
-   docker-compose exec safespace-app php artisan tinker --execute="Redis::ping();"
+   docker compose exec safespace-app php artisan tinker --execute="Redis::ping();"
    ```
 
 2. **Manually process queue:**
    ```bash
-   docker-compose exec safespace-app php artisan queue:work --once
+   docker compose exec safespace-app php artisan queue:work --once
    ```
 
 3. **Clear failed jobs:**
    ```bash
-   docker-compose exec safespace-app php artisan queue:clear
+   docker compose exec safespace-app php artisan queue:clear
    ```
 
 ### WebSocket Connection Issues
@@ -208,12 +208,12 @@ For production with HTTPS, you need to:
 
 1. **Database Backups:**
    ```bash
-   docker-compose exec postgres pg_dump -U safespace_user safespace_production > backup.sql
+   docker compose exec postgres pg_dump -U safespace_user safespace_production > backup.sql
    ```
 
 2. **Redis Backups:**
    ```bash
-   docker-compose exec redis redis-cli BGSAVE
+   docker compose exec redis redis-cli BGSAVE
    ```
 
 3. **Application Files:**

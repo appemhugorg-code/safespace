@@ -36,7 +36,7 @@ fi
 docker compose build --no-cache
 
 echo "🔧 Starting services..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker compose.yml -f docker compose.prod.yml up -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."

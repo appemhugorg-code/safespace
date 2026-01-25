@@ -87,7 +87,7 @@ UAT_MONITORING_ENABLED=true
 
 ### 1.2 Create UAT Docker Compose Configuration
 
-Create `docker-compose.uat.yml`:
+Create `docker compose.uat.yml`:
 
 ```yaml
 version: '3.8'
@@ -492,7 +492,7 @@ echo "🚀 Starting SafeSpace UAT Deployment..."
 
 # Check prerequisites
 command -v docker >/dev/null 2>&1 || { echo "❌ Docker is required but not installed. Aborting." >&2; exit 1; }
-command -v docker-compose >/dev/null 2>&1 || { echo "❌ Docker Compose is required but not installed. Aborting." >&2; exit 1; }
+command -v docker compose >/dev/null 2>&1 || { echo "❌ Docker Compose is required but not installed. Aborting." >&2; exit 1; }
 
 # Load environment variables
 if [ -f .env.uat ]; then
@@ -505,10 +505,10 @@ fi
 
 # Build and start containers
 echo "🔨 Building UAT containers..."
-docker-compose -f docker-compose.uat.yml build --no-cache
+docker compose -f docker compose.uat.yml build --no-cache
 
 echo "🚀 Starting UAT services..."
-docker-compose -f docker-compose.uat.yml up -d
+docker compose -f docker compose.uat.yml up -d
 
 # Wait for database to be ready
 echo "⏳ Waiting for database to be ready..."
@@ -516,26 +516,26 @@ sleep 30
 
 # Run migrations and seeders
 echo "🗄️ Running database migrations..."
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan migrate:fresh --force
+docker compose -f docker compose.uat.yml exec uat-app php artisan migrate:fresh --force
 
 echo "🌱 Seeding UAT test data..."
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan db:seed --class=UATTestDataSeeder
+docker compose -f docker compose.uat.yml exec uat-app php artisan db:seed --class=UATTestDataSeeder
 
 # Clear caches
 echo "🧹 Clearing application caches..."
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan config:clear
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan cache:clear
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan route:clear
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan view:clear
+docker compose -f docker compose.uat.yml exec uat-app php artisan config:clear
+docker compose -f docker compose.uat.yml exec uat-app php artisan cache:clear
+docker compose -f docker compose.uat.yml exec uat-app php artisan route:clear
+docker compose -f docker compose.uat.yml exec uat-app php artisan view:clear
 
 # Build frontend assets
 echo "🎨 Building frontend assets..."
-docker-compose -f docker-compose.uat.yml exec uat-app npm install
-docker-compose -f docker-compose.uat.yml exec uat-app npm run build
+docker compose -f docker compose.uat.yml exec uat-app npm install
+docker compose -f docker compose.uat.yml exec uat-app npm run build
 
 # Test email configuration
 echo "📧 Testing email configuration..."
-docker-compose -f docker-compose.uat.yml exec uat-app php artisan uat:test-email admin-uat@safespace.com --role=admin
+docker compose -f docker compose.uat.yml exec uat-app php artisan uat:test-email admin-uat@safespace.com --role=admin
 
 # Health check
 echo "🏥 Performing health check..."
@@ -556,8 +556,8 @@ echo "   Guardian: guardian1-uat@safespace.com / UATGuardian2024!"
 echo "   Child: child1-uat@safespace.com / UATChild2024!"
 echo ""
 echo "📊 Monitoring:"
-echo "   Logs: docker-compose -f docker-compose.uat.yml logs -f"
-echo "   Status: docker-compose -f docker-compose.uat.yml ps"
+echo "   Logs: docker compose -f docker compose.uat.yml logs -f"
+echo "   Status: docker compose -f docker compose.uat.yml ps"
 echo ""
 ```
 

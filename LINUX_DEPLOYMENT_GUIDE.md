@@ -47,8 +47,8 @@ sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Logout and login again for group changes
 newgrp docker
@@ -70,8 +70,8 @@ sudo systemctl start docker
 sudo usermod -aG docker $USER
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Logout and login again
 newgrp docker
@@ -88,16 +88,16 @@ cd safespace
 cp .env.example .env
 
 # Generate application key
-docker-compose run --rm safespace-app php artisan key:generate
+docker compose run --rm safespace-app php artisan key:generate
 
 # Start development environment
-docker-compose up -d
+docker compose up -d
 
 # Run database migrations
-docker-compose exec safespace-app php artisan migrate
+docker compose exec safespace-app php artisan migrate
 
 # Seed database (optional)
-docker-compose exec safespace-app php artisan db:seed
+docker compose exec safespace-app php artisan db:seed
 ```
 
 ### Step 3: Access Development Environment
@@ -111,22 +111,22 @@ docker-compose exec safespace-app php artisan db:seed
 
 ```bash
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Access application container
-docker-compose exec safespace-app bash
+docker compose exec safespace-app bash
 
 # Run artisan commands
-docker-compose exec safespace-app php artisan [command]
+docker compose exec safespace-app php artisan [command]
 
 # Install npm packages
-docker-compose exec safespace-app npm install
+docker compose exec safespace-app npm install
 
 # Build frontend assets
-docker-compose exec safespace-app npm run build
+docker compose exec safespace-app npm run build
 
 # Stop development environment
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -158,8 +158,8 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Configure firewall
 sudo ufw allow 22
@@ -186,15 +186,15 @@ nano .env.production
 
 ```bash
 # Build and start production services
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker compose.yml -f docker compose.prod.yml up -d --build
 
 # Run database migrations
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec safespace-app php artisan migrate --force
+docker compose -f docker compose.yml -f docker compose.prod.yml exec safespace-app php artisan migrate --force
 
 # Cache configuration
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec safespace-app php artisan config:cache
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec safespace-app php artisan route:cache
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec safespace-app php artisan view:cache
+docker compose -f docker compose.yml -f docker compose.prod.yml exec safespace-app php artisan config:cache
+docker compose -f docker compose.yml -f docker compose.prod.yml exec safespace-app php artisan route:cache
+docker compose -f docker compose.yml -f docker compose.prod.yml exec safespace-app php artisan view:cache
 ```
 
 ---
@@ -228,10 +228,10 @@ mkdir -p ./certbot/conf
 mkdir -p ./certbot/www
 
 # Start nginx for domain verification
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d nginx
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d nginx
 
 # Generate SSL certificate
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certonly \
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email admin@emhug.org \
@@ -241,7 +241,7 @@ docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot 
 
 # Start all services with SSL
 cp .env.production.ssl .env.production
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 ```
 
 ---
@@ -268,8 +268,8 @@ After=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/home/ubuntu/safespace
-ExecStart=/usr/local/bin/docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-ExecStop=/usr/local/bin/docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+ExecStart=/usr/local/bin/docker compose -f docker compose.yml -f docker compose.prod.yml up -d
+ExecStop=/usr/local/bin/docker compose -f docker compose.yml -f docker compose.prod.yml down
 TimeoutStartSec=0
 User=ubuntu
 Group=docker
@@ -304,18 +304,18 @@ sudo journalctl -u safespace -f
 
 ```bash
 # View running containers
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs -f [service_name]
+docker compose logs -f [service_name]
 
 # Restart specific service
-docker-compose restart [service_name]
+docker compose restart [service_name]
 
 # Update application
 git pull origin main
-docker-compose build safespace-app
-docker-compose up -d safespace-app
+docker compose build safespace-app
+docker compose up -d safespace-app
 
 # Clean up unused images
 docker system prune -a
@@ -329,13 +329,13 @@ docker system prune -a
 
 ```bash
 # View application logs
-docker-compose logs -f safespace-app
+docker compose logs -f safespace-app
 
 # View nginx logs
-docker-compose logs -f nginx
+docker compose logs -f nginx
 
 # View database logs
-docker-compose logs -f postgres
+docker compose logs -f postgres
 
 # System logs
 sudo journalctl -f
@@ -359,13 +359,13 @@ free -h                 # Memory usage
 
 ```bash
 # Access PostgreSQL
-docker-compose exec postgres psql -U safespace_user -d safespace_production
+docker compose exec postgres psql -U safespace_user -d safespace_production
 
 # Backup database
-docker-compose exec postgres pg_dump -U safespace_user safespace_production > backup.sql
+docker compose exec postgres pg_dump -U safespace_user safespace_production > backup.sql
 
 # Restore database
-docker-compose exec -T postgres psql -U safespace_user -d safespace_production < backup.sql
+docker compose exec -T postgres psql -U safespace_user -d safespace_production < backup.sql
 ```
 
 ### Automated Backups
@@ -383,7 +383,7 @@ BACKUP_DIR="$HOME/backups"
 mkdir -p $BACKUP_DIR
 
 # Database backup
-docker-compose exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
+docker compose exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
 
 # Storage backup
 tar -czf $BACKUP_DIR/storage_$DATE.tar.gz storage/
@@ -433,13 +433,13 @@ sudo systemctl stop nginx
 #### 3. Database Connection Issues
 ```bash
 # Check PostgreSQL logs
-docker-compose logs postgres
+docker compose logs postgres
 
 # Reset database
-docker-compose down
+docker compose down
 docker volume rm safespace_postgres_data
-docker-compose up -d postgres
-docker-compose exec safespace-app php artisan migrate
+docker compose up -d postgres
+docker compose exec safespace-app php artisan migrate
 ```
 
 #### 4. SSL Certificate Issues
@@ -451,7 +451,7 @@ docker-compose exec safespace-app php artisan migrate
 ./scripts/renew-ssl.sh
 
 # Check nginx configuration
-docker-compose exec nginx nginx -t
+docker compose exec nginx nginx -t
 ```
 
 #### 5. Out of Memory
@@ -471,7 +471,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ./storage/logs/laravel.log
 
 # Docker logs
-docker-compose logs
+docker compose logs
 
 # System logs
 /var/log/syslog
@@ -490,11 +490,11 @@ curl -I http://localhost
 curl -I https://app.emhug.org
 
 # Check database connection
-docker-compose exec safespace-app php artisan tinker
+docker compose exec safespace-app php artisan tinker
 # In tinker: DB::connection()->getPdo();
 
 # Check Redis connection
-docker-compose exec redis redis-cli ping
+docker compose exec redis redis-cli ping
 ```
 
 ---
@@ -505,31 +505,31 @@ docker-compose exec redis redis-cli ping
 
 ```bash
 # Start development
-docker-compose up -d
+docker compose up -d
 
 # Start production
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker compose.yml -f docker compose.prod.yml up -d
 
 # Start with SSL
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Access container
-docker-compose exec safespace-app bash
+docker compose exec safespace-app bash
 
 # Run migrations
-docker-compose exec safespace-app php artisan migrate
+docker compose exec safespace-app php artisan migrate
 
 # Clear cache
-docker-compose exec safespace-app php artisan cache:clear
+docker compose exec safespace-app php artisan cache:clear
 
 # Stop services
-docker-compose down
+docker compose down
 
 # Update application
-git pull && docker-compose build && docker-compose up -d
+git pull && docker compose build && docker compose up -d
 ```
 
 ### File Locations
@@ -537,9 +537,9 @@ git pull && docker-compose build && docker-compose up -d
 ```
 safespace/
 ├── .env                          # Environment configuration
-├── docker-compose.yml            # Development setup
-├── docker-compose.prod.yml       # Production overrides
-├── docker-compose.ssl.yml        # SSL configuration
+├── docker compose.yml            # Development setup
+├── docker compose.prod.yml       # Production overrides
+├── docker compose.ssl.yml        # SSL configuration
 ├── deploy-ssl.sh                 # SSL deployment script
 ├── storage/logs/                 # Application logs
 ├── certbot/                      # SSL certificates

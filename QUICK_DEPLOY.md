@@ -115,7 +115,7 @@ curl -I https://app.emhug.org
 https://www.ssllabs.com/ssltest/analyze.html?d=app.emhug.org
 
 # Check application status
-docker-compose ps
+docker compose ps
 ```
 
 ## 🆘 Troubleshooting
@@ -139,16 +139,16 @@ dig app.emhug.org
 ### Application Issues
 ```bash
 # Check logs
-docker-compose logs
+docker compose logs
 
 # Restart services
-docker-compose restart
+docker compose restart
 ```
 
 ## 📞 Support
 
 If you encounter issues:
-1. Check the logs: `docker-compose logs`
+1. Check the logs: `docker compose logs`
 2. Verify DNS configuration
 3. Ensure ports 80/443 are open
 4. Check server resources: `htop`

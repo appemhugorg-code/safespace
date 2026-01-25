@@ -27,21 +27,21 @@ if [ -d "./certbot/conf/live/$DOMAIN" ]; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "🔄 Renewing certificates..."
-        docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot renew
+        docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot renew
     fi
 else
     echo "🆕 Obtaining new certificates for $DOMAIN..."
     
     # Start nginx temporarily for domain verification
     echo "🚀 Starting temporary nginx for domain verification..."
-    docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d nginx
+    docker compose -f docker compose.yml -f docker compose.ssl.yml up -d nginx
     
     # Wait for nginx to be ready
     sleep 10
     
     # Get initial certificate
     echo "📜 Requesting SSL certificate from Let's Encrypt..."
-    docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certonly \
+    docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email $EMAIL \
@@ -62,7 +62,7 @@ cp .env.production.ssl .env.production
 
 # Start all services with SSL
 echo "🚀 Starting all services with SSL..."
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."
@@ -75,7 +75,7 @@ if curl -s -I https://$DOMAIN | grep -q "200 OK"; then
     echo "🌐 Your SafeSpace application is now available at: https://$DOMAIN"
 else
     echo "❌ SSL test failed. Please check the logs:"
-    echo "   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml logs nginx"
+    echo "   docker compose -f docker compose.yml -f docker compose.ssl.yml logs nginx"
 fi
 
 # Setup automatic renewal
@@ -85,10 +85,10 @@ cat > ./scripts/renew-ssl.sh << 'EOF'
 # Automatic SSL certificate renewal script
 
 echo "🔄 Renewing SSL certificates..."
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot renew
+docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot renew
 
 echo "🔄 Reloading nginx..."
-docker-compose -f docker-compose.yml -f docker-compose.ssl.yml exec nginx nginx -s reload
+docker compose -f docker compose.yml -f docker compose.ssl.yml exec nginx nginx -s reload
 
 echo "✅ SSL renewal completed!"
 EOF
@@ -112,6 +112,6 @@ echo ""
 echo "3. Your application is now available at: https://$DOMAIN"
 echo ""
 echo "🔧 Useful Commands:"
-echo "   View logs: docker-compose -f docker-compose.yml -f docker-compose.ssl.yml logs"
-echo "   Restart:   docker-compose -f docker-compose.yml -f docker-compose.ssl.yml restart"
-echo "   Stop:      docker-compose -f docker-compose.yml -f docker-compose.ssl.yml down"
+echo "   View logs: docker compose -f docker compose.yml -f docker compose.ssl.yml logs"
+echo "   Restart:   docker compose -f docker compose.yml -f docker compose.ssl.yml restart"
+echo "   Stop:      docker compose -f docker compose.yml -f docker compose.ssl.yml down"

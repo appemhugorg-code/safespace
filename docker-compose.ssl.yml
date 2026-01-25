@@ -1,5 +1,5 @@
 # SSL-enabled production configuration for SafeSpace
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+# Usage: docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
 
 services:
   # SafeSpace Application (Laravel + React)

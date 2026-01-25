@@ -222,8 +222,8 @@ Route::get('/uat/info', function () {
             'quick_start' => '/docs/uat/UAT_QUICK_START.md',
         ],
         'monitoring' => [
-            'logs' => 'docker-compose -f docker-compose.uat.yml logs -f',
-            'status' => 'docker-compose -f docker-compose.uat.yml ps',
+            'logs' => 'docker compose -f docker compose.uat.yml logs -f',
+            'status' => 'docker compose -f docker compose.uat.yml ps',
         ],
     ]);
 })->name('uat.info');

@@ -49,8 +49,8 @@ Ensure your server has:
    sh get-docker.sh
    
    # Install Docker Compose
-   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   sudo chmod +x /usr/local/bin/docker-compose
+   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+   sudo chmod +x /usr/local/bin/docker compose
    ```
 
 3. **Production environment file**:
@@ -149,10 +149,10 @@ Run these on your server to debug issues:
 
 ```bash
 # Check container status
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker compose -f docker compose.yml -f docker compose.prod.yml ps
 
 # View application logs
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs safespace-app
+docker compose -f docker compose.yml -f docker compose.prod.yml logs safespace-app
 
 # Check disk space
 df -h

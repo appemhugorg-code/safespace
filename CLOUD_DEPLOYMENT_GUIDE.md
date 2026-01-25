@@ -46,8 +46,8 @@ sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Install additional tools
 sudo apt install -y git curl wget unzip
@@ -113,8 +113,8 @@ sudo sh get-docker.sh
 sudo usermod -aG docker ubuntu
 
 # Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+sudo chmod +x /usr/local/bin/docker compose
 
 # Logout and login again for docker group changes
 exit
@@ -249,9 +249,9 @@ fi
 
 # Install Docker Compose
 echo "🔧 Installing Docker Compose..."
-if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+if ! command -v docker compose &> /dev/null; then
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+    sudo chmod +x /usr/local/bin/docker compose
 fi
 
 # Install additional tools
@@ -306,13 +306,13 @@ echo "🌐 Your application should be available at: https://app.emhug.org"
 
 ```bash
 # Check container status
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker compose -f docker compose.yml -f docker compose.prod.yml ps
 
 # Test SSL
 ./scripts/verify-ssl.sh
 
 # Check logs
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs
+docker compose -f docker compose.yml -f docker compose.prod.yml logs
 ```
 
 ### 2. Set Up Monitoring
@@ -358,7 +358,7 @@ BACKUP_DIR="/home/ubuntu/backups"
 mkdir -p $BACKUP_DIR
 
 # Backup database
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
+docker compose -f docker compose.yml -f docker compose.prod.yml exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
 
 # Backup uploads
 tar -czf $BACKUP_DIR/uploads_$DATE.tar.gz storage/app/public/
@@ -390,7 +390,7 @@ crontab -e
    curl -I http://app.emhug.org
    
    # Check nginx logs
-   docker-compose logs nginx
+   docker compose logs nginx
    ```
 
 2. **Application Not Accessible:**
@@ -399,19 +399,19 @@ crontab -e
    sudo ufw status
    
    # Check container status
-   docker-compose ps
+   docker compose ps
    
    # Check application logs
-   docker-compose logs safespace-app
+   docker compose logs safespace-app
    ```
 
 3. **Database Connection Issues:**
    ```bash
    # Check PostgreSQL logs
-   docker-compose logs postgres
+   docker compose logs postgres
    
    # Test database connection
-   docker-compose exec postgres psql -U safespace_user -d safespace_production
+   docker compose exec postgres psql -U safespace_user -d safespace_production
    ```
 
 ### Performance Optimization
@@ -463,7 +463,7 @@ if curl -s -f https://$DOMAIN > /dev/null; then
 else
     echo "❌ HTTPS FAILED"
     # Restart services
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml restart
+    docker compose -f docker compose.yml -f docker compose.prod.yml restart
 fi
 
 # Check SSL expiry

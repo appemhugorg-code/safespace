@@ -190,7 +190,7 @@ if [ $REDIS_READY -eq 0 ]; then
     timeout 5 redis-cli -h redis -p 6379 info server 2>/dev/null || echo "Could not get Redis server info"
     
     echo "Checking Redis container status..."
-    echo "If this fails, check: docker-compose logs redis"
+    echo "If this fails, check: docker compose logs redis"
     
     # Run detailed Redis test for debugging
     echo "Running detailed Redis test..."

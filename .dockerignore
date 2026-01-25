@@ -43,4 +43,4 @@ Thumbs.db
 .phpunit.result.cache
 
 # Deployment
-docker-compose.override.yml
+docker compose.override.yml

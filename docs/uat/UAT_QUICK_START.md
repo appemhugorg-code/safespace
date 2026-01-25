@@ -131,7 +131,7 @@ The test data includes realistic family relationships:
 - **Screen Sizes:** 320px (mobile), 768px (tablet), 1024px+ (desktop)
 
 ### Email Testing
-- **Test Email Command:** `docker-compose -f docker-compose.uat.yml exec uat-app php artisan uat:test-email your-email@example.com --role=admin`
+- **Test Email Command:** `docker compose -f docker compose.uat.yml exec uat-app php artisan uat:test-email your-email@example.com --role=admin`
 - **Email Clients:** Gmail, Outlook, Apple Mail, mobile clients
 
 ### Performance Testing

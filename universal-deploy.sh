@@ -66,9 +66,9 @@ fi
 
 # Install Docker Compose
 print_status "Installing Docker Compose..."
-if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+if ! command -v docker compose &> /dev/null; then
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker compose
+    sudo chmod +x /usr/local/bin/docker compose
     print_success "Docker Compose installed successfully"
 else
     print_success "Docker Compose already installed"
@@ -218,7 +218,7 @@ if curl -s -f https://$DOMAIN > /dev/null; then
 else
     echo "$(date): ❌ HTTPS FAILED - Restarting services" >> $LOG_FILE
     cd $(dirname "$0")
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml restart
+    docker compose -f docker compose.yml -f docker compose.prod.yml restart
 fi
 
 # Check SSL expiry (30 days)
@@ -250,7 +250,7 @@ echo "$(date): Starting backup" >> $BACKUP_DIR/backup.log
 
 # Backup database
 cd $PROJECT_DIR
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
+docker compose -f docker compose.yml -f docker compose.prod.yml exec -T postgres pg_dump -U safespace_user safespace_production > $BACKUP_DIR/db_$DATE.sql
 
 # Backup storage
 tar -czf $BACKUP_DIR/storage_$DATE.tar.gz storage/
@@ -308,10 +308,10 @@ echo "   🖥️  Server IP: $SERVER_IP"
 echo "   📧 Admin Email: admin@emhug.org"
 echo ""
 echo "🔧 Management Commands:"
-echo "   View status:  docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps"
-echo "   View logs:    docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs"
-echo "   Restart:      docker-compose -f docker-compose.yml -f docker-compose.prod.yml restart"
-echo "   Stop:         docker-compose -f docker-compose.yml -f docker-compose.prod.yml down"
+echo "   View status:  docker compose -f docker compose.yml -f docker compose.prod.yml ps"
+echo "   View logs:    docker compose -f docker compose.yml -f docker compose.prod.yml logs"
+echo "   Restart:      docker compose -f docker compose.yml -f docker compose.prod.yml restart"
+echo "   Stop:         docker compose -f docker compose.yml -f docker compose.prod.yml down"
 echo "   SSL renewal:  ./scripts/renew-ssl.sh"
 echo "   Verify SSL:   ./scripts/verify-ssl.sh"
 echo "   Backup:       ./backup.sh"

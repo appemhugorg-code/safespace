@@ -37,7 +37,7 @@ command -v docker >/dev/null 2>&1 || {
     exit 1
 }
 
-command -v docker-compose >/dev/null 2>&1 || { 
+command -v docker compose >/dev/null 2>&1 || { 
     print_error "Docker Compose is required but not installed. Aborting."
     exit 1
 }
@@ -73,15 +73,15 @@ print_success "Loaded UAT environment variables"
 
 # Stop existing UAT containers if running
 print_status "Stopping existing UAT containers..."
-docker-compose -f docker-compose.uat.yml down --remove-orphans || true
+docker compose -f docker compose.uat.yml down --remove-orphans || true
 
 # Build containers
 print_status "Building UAT containers..."
-docker-compose -f docker-compose.uat.yml build --no-cache
+docker compose -f docker compose.uat.yml build --no-cache
 
 # Start services
 print_status "Starting UAT services..."
-docker-compose -f docker-compose.uat.yml up -d
+docker compose -f docker compose.uat.yml up -d
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
@@ -93,7 +93,7 @@ max_attempts=30
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
-    if docker-compose -f docker-compose.uat.yml exec -T uat-postgres pg_isready -U safespace_uat -d safespace_uat >/dev/null 2>&1; then
+    if docker compose -f docker compose.uat.yml exec -T uat-postgres pg_isready -U safespace_uat -d safespace_uat >/dev/null 2>&1; then
         print_success "Database is ready"
         break
     fi
@@ -110,44 +110,44 @@ done
 
 # Install PHP dependencies
 print_status "Installing PHP dependencies..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app composer install --no-dev --optimize-autoloader
+docker compose -f docker compose.uat.yml exec -T uat-app composer install --no-dev --optimize-autoloader
 
 # Generate application key if needed
 if grep -q "YOUR_UAT_APP_KEY_HERE" .env.uat; then
     print_status "Generating application key..."
-    docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan key:generate --force
+    docker compose -f docker compose.uat.yml exec -T uat-app php artisan key:generate --force
 fi
 
 # Run migrations
 print_status "Running database migrations..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan migrate:fresh --force
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan migrate:fresh --force
 
 # Seed UAT test data
 print_status "Seeding UAT test data..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan db:seed --force
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan db:seed --force
 
 # Clear application caches
 print_status "Clearing application caches..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan config:clear
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan cache:clear
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan route:clear
-docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan view:clear
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan config:clear
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan cache:clear
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan route:clear
+docker compose -f docker compose.uat.yml exec -T uat-app php artisan view:clear
 
 # Install Node.js dependencies and build assets
 print_status "Installing Node.js dependencies..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app npm ci
+docker compose -f docker compose.uat.yml exec -T uat-app npm ci
 
 print_status "Building frontend assets..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app npm run build
+docker compose -f docker compose.uat.yml exec -T uat-app npm run build
 
 # Set proper permissions
 print_status "Setting proper permissions..."
-docker-compose -f docker-compose.uat.yml exec -T uat-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+docker compose -f docker compose.uat.yml exec -T uat-app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Test email configuration (optional)
 if [ ! -z "$RESEND_API_KEY" ] && [ "$RESEND_API_KEY" != "YOUR_UAT_RESEND_API_KEY" ]; then
     print_status "Testing email configuration..."
-    docker-compose -f docker-compose.uat.yml exec -T uat-app php artisan uat:test-email admin-uat@safespace.com --role=admin || print_warning "Email test failed - check configuration"
+    docker compose -f docker compose.uat.yml exec -T uat-app php artisan uat:test-email admin-uat@safespace.com --role=admin || print_warning "Email test failed - check configuration"
 else
     print_warning "Skipping email test - RESEND_API_KEY not configured"
 fi
@@ -181,10 +181,10 @@ echo "   👨‍👩‍👧‍👦 Guardian: guardian1-uat@safespace.com / UATGu
 echo "   🧒 Child: child1-uat@safespace.com / UATChild2024!"
 echo ""
 echo "🛠️  Management Commands:"
-echo "   📊 View logs: docker-compose -f docker-compose.uat.yml logs -f"
-echo "   📈 Check status: docker-compose -f docker-compose.uat.yml ps"
-echo "   🔄 Restart: docker-compose -f docker-compose.uat.yml restart"
-echo "   🛑 Stop: docker-compose -f docker-compose.uat.yml down"
+echo "   📊 View logs: docker compose -f docker compose.uat.yml logs -f"
+echo "   📈 Check status: docker compose -f docker compose.uat.yml ps"
+echo "   🔄 Restart: docker compose -f docker compose.uat.yml restart"
+echo "   🛑 Stop: docker compose -f docker compose.uat.yml down"
 echo ""
 echo "🏥 Health Check: curl http://localhost:8080/health"
 echo ""

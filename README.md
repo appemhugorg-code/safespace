@@ -251,16 +251,16 @@ For a containerized development environment:
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Access application container
-docker-compose exec safespace-app bash
+docker compose exec safespace-app bash
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 ## 🔒 Security Features
