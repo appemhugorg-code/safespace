@@ -352,21 +352,42 @@ export class EnhancedThemePersistence {
     // Run server sync in background without blocking
     setTimeout(async () => {
       try {
-        const { theme: serverTheme } = await themeSyncService.loadFromServer();
-        if (serverTheme) {
+        // Check if user has made recent changes - if so, skip background sync
+        const userChanges = sessionStorage.getItem('safespace-user-theme-changes');
+        if (userChanges) {
+          const userChangeData = JSON.parse(userChanges);
+          const userChangeTime = new Date(userChangeData.timestamp);
+          const now = new Date();
+          
+          // If user made changes in the last 10 minutes, skip background sync
+          if (now.getTime() - userChangeTime.getTime() < 600000) {
+            console.log('Skipping background sync - user has made recent changes');
+            return;
+          }
+        }
+        
+        const { theme: serverTheme, result } = await themeSyncService.loadFromServer();
+        if (serverTheme && result.success) {
           // Check if server theme is different from local
           const localData = localStorage.getItem('safespace-theme-local');
           if (localData) {
             const parsed = JSON.parse(localData);
             const localTimestamp = new Date(parsed.timestamp);
-            const now = new Date();
+            const serverTimestamp = result.timestamp ? new Date(result.timestamp) : new Date();
             
-            // If server theme is newer (or significantly different), dispatch update
-            if (now.getTime() - localTimestamp.getTime() > 60000) { // 1 minute threshold
-              const customEvent = new CustomEvent('backgroundThemeSync', {
-                detail: { theme: serverTheme, timestamp: now }
-              });
-              window.dispatchEvent(customEvent);
+            // If server theme is significantly newer (more than 5 minutes), dispatch update
+            if (serverTimestamp.getTime() - localTimestamp.getTime() > 300000) {
+              // Only dispatch if there are meaningful differences
+              const hasSignificantChanges = 
+                (serverTheme.mode && serverTheme.mode !== parsed.theme?.mode) ||
+                (serverTheme.accessibility && JSON.stringify(serverTheme.accessibility) !== JSON.stringify(parsed.theme?.accessibility));
+              
+              if (hasSignificantChanges) {
+                const customEvent = new CustomEvent('backgroundThemeSync', {
+                  detail: { theme: serverTheme, timestamp: serverTimestamp }
+                });
+                window.dispatchEvent(customEvent);
+              }
             }
           }
         }
@@ -633,22 +654,43 @@ export class EnhancedThemePersistence {
     this.syncTimer = setInterval(async () => {
       if (navigator.onLine && this.options.enableCrossDevice && this.isUserAuthenticated()) {
         try {
+          // Check if user has made recent changes - if so, skip periodic sync
+          const userChanges = sessionStorage.getItem('safespace-user-theme-changes');
+          if (userChanges) {
+            const userChangeData = JSON.parse(userChanges);
+            const userChangeTime = new Date(userChangeData.timestamp);
+            const now = new Date();
+            
+            // If user made changes in the last 30 minutes, skip periodic sync
+            if (now.getTime() - userChangeTime.getTime() < 1800000) {
+              console.log('Skipping periodic sync - user has made recent changes');
+              return;
+            }
+          }
+          
           // Check for remote updates periodically
-          const { theme } = await themeSyncService.loadFromServer();
-          if (theme) {
+          const { theme, result } = await themeSyncService.loadFromServer();
+          if (theme && result.success) {
             // Compare with local theme to see if update is needed
             const localData = localStorage.getItem('safespace-theme-local');
             if (localData) {
               const parsed = JSON.parse(localData);
               const localTimestamp = new Date(parsed.timestamp);
-              const serverTimestamp = new Date();
+              const serverTimestamp = result.timestamp ? new Date(result.timestamp) : new Date();
               
-              // If server theme is newer, dispatch update event
-              if (serverTimestamp > localTimestamp) {
-                const customEvent = new CustomEvent('periodicThemeSync', {
-                  detail: { theme, timestamp: serverTimestamp }
-                });
-                window.dispatchEvent(customEvent);
+              // Only dispatch update if server theme is significantly newer (more than 5 minutes)
+              if (serverTimestamp.getTime() - localTimestamp.getTime() > 300000) {
+                // Check if there are actually meaningful differences
+                const hasSignificantChanges = 
+                  (theme.mode && theme.mode !== parsed.theme?.mode) ||
+                  (theme.accessibility && JSON.stringify(theme.accessibility) !== JSON.stringify(parsed.theme?.accessibility));
+                
+                if (hasSignificantChanges) {
+                  const customEvent = new CustomEvent('periodicThemeSync', {
+                    detail: { theme, timestamp: serverTimestamp }
+                  });
+                  window.dispatchEvent(customEvent);
+                }
               }
             }
           }

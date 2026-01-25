@@ -425,25 +425,126 @@ export function ThemeProvider({
       setIsSystemDark(isDark);
     };
 
-    // Handle theme changes from other tabs
+    // Handle theme changes from other tabs - only if user hasn't made recent changes
     const handleCrossTabSync = (event: CustomEvent) => {
-      const { theme: newTheme } = event.detail;
+      const { theme: newTheme, timestamp } = event.detail;
       console.log('Received theme update from another tab');
-      setThemeState(prev => ({ ...prev, ...newTheme }));
+      
+      // Only apply if the sync is recent (within last 5 minutes) and user hasn't made local changes
+      const syncTime = new Date(timestamp);
+      const now = new Date();
+      const timeDiff = now.getTime() - syncTime.getTime();
+      
+      if (timeDiff < 300000) { // 5 minutes
+        setThemeState(prev => {
+          // Intelligent merge - preserve user's explicit preferences
+          const merged = { ...prev };
+          
+          // Only update non-user-modified properties
+          if (newTheme.mode && newTheme.mode !== prev.mode) {
+            merged.mode = newTheme.mode;
+          }
+          
+          // Update colors only if they're significantly different
+          if (newTheme.colors && JSON.stringify(newTheme.colors) !== JSON.stringify(prev.colors)) {
+            merged.colors = { ...prev.colors, ...newTheme.colors };
+          }
+          
+          // Update animations and accessibility settings
+          if (newTheme.animations) {
+            merged.animations = { ...prev.animations, ...newTheme.animations };
+          }
+          
+          if (newTheme.accessibility) {
+            merged.accessibility = { ...prev.accessibility, ...newTheme.accessibility };
+          }
+          
+          return merged;
+        });
+      }
     };
 
-    // Handle remote theme updates from other devices
+    // Handle remote theme updates from other devices - be more conservative
     const handleRemoteThemeUpdate = (event: CustomEvent) => {
-      const { theme: newTheme } = event.detail;
+      const { theme: newTheme, timestamp } = event.detail;
       console.log('Received theme update from server');
-      setThemeState(prev => ({ ...prev, ...newTheme }));
+      
+      // Only apply remote updates if they're very recent (within last 2 minutes)
+      // and don't override explicit user changes
+      const updateTime = new Date(timestamp);
+      const now = new Date();
+      const timeDiff = now.getTime() - updateTime.getTime();
+      
+      if (timeDiff < 120000) { // 2 minutes
+        setThemeState(prev => {
+          // Very conservative merge - only update if user hasn't explicitly changed settings
+          const merged = { ...prev };
+          
+          // Check if user has made recent explicit changes (stored in sessionStorage)
+          try {
+            const userChanges = sessionStorage.getItem('safespace-user-theme-changes');
+            const userChangeTime = userChanges ? new Date(JSON.parse(userChanges).timestamp) : null;
+            
+            // If user made changes in the last 10 minutes, don't override
+            if (userChangeTime && (now.getTime() - userChangeTime.getTime()) < 600000) {
+              console.log('Ignoring remote theme update - user has made recent changes');
+              return prev;
+            }
+          } catch (error) {
+            console.warn('Failed to check user changes:', error);
+          }
+          
+          // Apply remote changes conservatively
+          if (newTheme.mode && newTheme.mode !== prev.mode) {
+            merged.mode = newTheme.mode;
+          }
+          
+          return merged;
+        });
+      }
     };
 
-    // Handle periodic sync updates
+    // Handle periodic sync updates - most conservative approach
     const handlePeriodicSync = (event: CustomEvent) => {
-      const { theme: newTheme } = event.detail;
+      const { theme: newTheme, timestamp } = event.detail;
       console.log('Received periodic theme sync update');
-      setThemeState(prev => ({ ...prev, ...newTheme }));
+      
+      // For periodic sync, only update if there are no recent user changes
+      try {
+        const userChanges = sessionStorage.getItem('safespace-user-theme-changes');
+        const userChangeTime = userChanges ? new Date(JSON.parse(userChanges).timestamp) : null;
+        const now = new Date();
+        
+        // If user made changes in the last 30 minutes, don't override with periodic sync
+        if (userChangeTime && (now.getTime() - userChangeTime.getTime()) < 1800000) {
+          console.log('Ignoring periodic sync - user has made recent changes');
+          return;
+        }
+        
+        // Only apply if the sync brings significant changes
+        setThemeState(prev => {
+          const hasSignificantChanges = 
+            (newTheme.mode && newTheme.mode !== prev.mode) ||
+            (newTheme.accessibility && JSON.stringify(newTheme.accessibility) !== JSON.stringify(prev.accessibility));
+          
+          if (!hasSignificantChanges) {
+            return prev; // No significant changes, keep current theme
+          }
+          
+          // Apply only non-intrusive changes
+          return {
+            ...prev,
+            // Only update mode if it's different
+            ...(newTheme.mode && newTheme.mode !== prev.mode && { mode: newTheme.mode }),
+            // Only update accessibility if it's different
+            ...(newTheme.accessibility && { 
+              accessibility: { ...prev.accessibility, ...newTheme.accessibility }
+            })
+          };
+        });
+      } catch (error) {
+        console.warn('Failed to process periodic sync:', error);
+      }
     };
 
     // Update sync status periodically
@@ -469,10 +570,32 @@ export function ThemeProvider({
   }, []);
 
   const setTheme = useCallback((newTheme: Partial<ThemeConfig>) => {
+    // Track user-initiated theme changes
+    try {
+      const userChangeData = {
+        timestamp: new Date().toISOString(),
+        changes: Object.keys(newTheme)
+      };
+      sessionStorage.setItem('safespace-user-theme-changes', JSON.stringify(userChangeData));
+    } catch (error) {
+      console.warn('Failed to track user theme changes:', error);
+    }
+    
     setThemeState(prev => ({ ...prev, ...newTheme }));
   }, []);
 
   const toggleMode = useCallback(() => {
+    // Track user-initiated mode toggle
+    try {
+      const userChangeData = {
+        timestamp: new Date().toISOString(),
+        changes: ['mode']
+      };
+      sessionStorage.setItem('safespace-user-theme-changes', JSON.stringify(userChangeData));
+    } catch (error) {
+      console.warn('Failed to track user theme changes:', error);
+    }
+    
     setThemeState(prev => ({
       ...prev,
       mode: prev.mode === 'light' ? 'dark' : prev.mode === 'dark' ? 'auto' : 'light',

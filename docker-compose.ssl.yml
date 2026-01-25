@@ -1,5 +1,8 @@
-# Production overrides for SafeSpace
+# SSL-enabled production configuration for SafeSpace
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
+
 services:
+  # SafeSpace Application (Laravel + React)
   safespace-app:
     environment:
       - APP_ENV=production
@@ -12,6 +15,7 @@ services:
         reservations:
           memory: 512M
 
+  # Nginx Web Server with SSL
   nginx:
     ports:
       - "80:80"
