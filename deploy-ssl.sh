@@ -78,11 +78,11 @@ mkdir -p ./storage/logs
 # Stop any existing containers
 print_status "Stopping existing containers..."
 docker compose down 2>/dev/null || true
-docker compose -f docker compose.yml -f docker compose.ssl.yml down 2>/dev/null || true
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml down 2>/dev/null || true
 
 # Build the application
 print_status "Building SafeSpace application..."
-docker compose -f docker compose.yml build safespace-app
+docker compose -f docker-compose.yml build safespace-app
 
 # Check if certificates already exist
 if [ -d "./certbot/conf/live/$DOMAIN" ]; then
@@ -121,7 +121,7 @@ if [ "$USE_EXISTING_CERTS" = false ]; then
     
     # Generate SSL certificate
     print_status "Requesting SSL certificate from Let's Encrypt..."
-    docker compose -f docker compose.yml -f docker compose.ssl.yml run --rm certbot certonly \
+    docker compose -f docker-compose.yml -f docker-compose.ssl.yml run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email $EMAIL \
@@ -157,7 +157,7 @@ fi
 
 # Start all services with SSL
 print_status "Starting all services with SSL configuration..."
-docker compose -f docker compose.yml -f docker compose.ssl.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml up -d
 
 # Wait for services to be ready
 print_status "Waiting for services to start..."
@@ -165,13 +165,13 @@ sleep 30
 
 # Run database migrations
 print_status "Running database migrations..."
-docker compose -f docker compose.yml -f docker compose.ssl.yml exec -T safespace-app php artisan migrate --force
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml exec -T safespace-app php artisan migrate --force
 
 # Clear and cache configuration
 print_status "Optimizing application..."
-docker compose -f docker compose.yml -f docker compose.ssl.yml exec -T safespace-app php artisan config:cache
-docker compose -f docker compose.yml -f docker compose.ssl.yml exec -T safespace-app php artisan route:cache
-docker compose -f docker compose.yml -f docker compose.ssl.yml exec -T safespace-app php artisan view:cache
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml exec -T safespace-app php artisan config:cache
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml exec -T safespace-app php artisan route:cache
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml exec -T safespace-app php artisan view:cache
 
 # Test SSL certificate
 print_status "Testing SSL certificate..."
@@ -230,8 +230,8 @@ print_status "Systemd service files created in /tmp/ (optional installation)"
 print_status "Performing final health checks..."
 
 # Check if all containers are running
-RUNNING_CONTAINERS=$(docker compose -f docker compose.yml -f docker compose.ssl.yml ps --services --filter "status=running" | wc -l)
-TOTAL_CONTAINERS=$(docker compose -f docker compose.yml -f docker compose.ssl.yml ps --services | wc -l)
+RUNNING_CONTAINERS=$(docker compose -f docker-compose.yml -f docker-compose.ssl.yml ps --services --filter "status=running" | wc -l)
+TOTAL_CONTAINERS=$(docker compose -f docker-compose.yml -f docker-compose.ssl.yml ps --services | wc -l)
 
 if [ "$RUNNING_CONTAINERS" -eq "$TOTAL_CONTAINERS" ]; then
     print_success "All containers are running ($RUNNING_CONTAINERS/$TOTAL_CONTAINERS)"
@@ -256,9 +256,9 @@ echo "   🐳 Docker Containers: $RUNNING_CONTAINERS running"
 echo "   📧 Admin Email: $EMAIL"
 echo ""
 echo "🔧 Management Commands:"
-echo "   View logs:    docker compose -f docker compose.yml -f docker compose.ssl.yml logs"
-echo "   Restart:      docker compose -f docker compose.yml -f docker compose.ssl.yml restart"
-echo "   Stop:         docker compose -f docker compose.yml -f docker compose.ssl.yml down"
+echo "   View logs:    docker compose -f docker-compose.yml -f docker-compose.ssl.yml logs"
+echo "   Restart:      docker compose -f docker-compose.yml -f docker-compose.ssl.yml restart"
+echo "   Stop:         docker compose -f docker-compose.yml -f docker-compose.ssl.yml down"
 echo "   Renew SSL:    ./scripts/renew-ssl.sh"
 echo ""
 echo "📅 Next Steps:"
