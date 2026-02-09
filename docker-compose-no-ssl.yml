@@ -1,0 +1,93 @@
+services:
+  # SafeSpace Application (Laravel + React)
+  safespace-app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: safespace-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./public/uploads:/var/www/html/public/uploads
+      - public_assets:/var/www/html/public
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"  # Expose Reverb WebSocket port
+    networks:
+      - safespace-network
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: safespace-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - public_assets:/var/www/html/public:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - safespace-app
+    networks:
+      - safespace-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: safespace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-safespace_production}
+      POSTGRES_USER: ${DB_USERNAME:-safespace_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-u+r2w#CRqA9LmgSv}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - safespace-network
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: safespace-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1000
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - safespace-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    sysctls:
+      - net.core.somaxconn=65535
+
+# Named volumes for persistent data
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  public_assets:
+    driver: local
+
+# Network for service communication
+networks:
+  safespace-network:
+    driver: bridge
