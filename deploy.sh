@@ -19,8 +19,12 @@ echo "🏗️  Building and starting containers..."
 docker compose -f docker-compose.yml up -d --build
 
 # Wait for services to be ready
-echo "⏳ Waiting for services to start..."
-sleep 15
+echo "⏳ Waiting for app setup to complete..."
+until docker compose exec -T safespace-app test -f /tmp/app-ready; do
+    echo "Setup still in progress... (checking again in 5s)"
+    sleep 5
+done
+echo "✅ App is ready! Run migrations next"
 
 # Run database migrations
 echo "🗄️  Running database migrations..."

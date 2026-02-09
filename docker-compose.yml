@@ -11,6 +11,7 @@ services:
       - ./storage:/var/www/html/storage
       - ./public/uploads:/var/www/html/public/uploads
       - public_assets:/var/www/html/public
+      - /var/www/html/vendor
     environment:
       - APP_ENV=${APP_ENV:-production}
     env_file:

@@ -17,7 +17,7 @@ if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php"
     fi
     
     # Clear any existing vendor directory first
-    rm -rf /var/www/html/vendor 2>/dev/null || true
+    #rm -rf /var/www/html/vendor 2>/dev/null || true
     
     # Install dependencies with proper error handling and skip scripts initially
     echo "Installing Composer packages (without scripts)..."
@@ -406,5 +406,8 @@ if [ "$1" = "/usr/bin/supervisord" ]; then
     fi
 fi
 
-# Execute the main command
+echo "✅ Setup complete. Creating ready flag."
+touch /tmp/app-ready
+
+# Execute the main container process (usually php-fpm)
 exec "$@"
