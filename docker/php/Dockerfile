@@ -49,12 +49,25 @@ WORKDIR /var/www/html
 # Copy composer files first for better Docker layer caching
 COPY composer.json composer.lock ./
 
+# 3. CRITICAL: Set environment variable to allow plugins as root
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # Install PHP dependencies with increased memory limit
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --verbose --ignore-platform-req=ext-* \
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
+    --no-dev \
+    # --optimize-autoloader \
+    --no-autoloader \
+    --no-plugins \
+    --no-interaction \
+    --no-scripts \
+    --verbose \
+    --ignore-platform-req=ext-* \
     && composer clear-cache
 
 # Copy application files
 COPY . .
+
+RUN composer dump-autoload --optimize
 
 # Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
 # Use increased memory limit for npm install as well
