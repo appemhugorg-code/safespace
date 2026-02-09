@@ -66,13 +66,13 @@ RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
 
 # Copy npm files
 COPY package.json package-lock.json ./
-RUN NODE_OPTIONS="--max-old-space-size=1536" npm ci
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
 
 # Copy application files
 COPY . .
 
 # Run the Vite build (Uses the baked-in node_modules)
-RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 # Build Frontend Assets (Production)
 # We do this here so the server doesn't have to do it at runtime
