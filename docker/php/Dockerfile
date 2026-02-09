@@ -64,17 +64,31 @@ RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --ignore-platform-req=ext-* \
     && composer clear-cache
 
+# Copy npm files
+COPY package.json package-lock.json ./
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm ci
+
 # Copy application files
 COPY . .
+
+# Run the Vite build (Uses the baked-in node_modules)
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
+
+# Build Frontend Assets (Production)
+# We do this here so the server doesn't have to do it at runtime
+# RUN NODE_OPTIONS="--max-old-space-size=2048" npm install && \
+#     NODE_OPTIONS="--max-old-space-size=2048" npm run build && \
+#     npm prune --production && \
+#     rm -rf /root/.npm
+
+# Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
+# Use increased memory limit for npm install as well
+# RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
 
 # Generate the autoloader WITHOUT running scripts
 # We use --no-scripts here too to prevent Artisan from booting 
 # because the DB/Redis aren't available during 'docker build'
-RUN composer dump-autoload --optimize --no-scripts --no-dev 
-
-# Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
-# Use increased memory limit for npm install as well
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
+RUN composer dump-autoload --optimize --no-scripts --no-dev
 
 # Note: Frontend assets will be built in entrypoint.sh to ensure latest changes
 

@@ -19,20 +19,15 @@ echo "🏗️  Building and starting containers..."
 docker compose -f docker-compose.yml up -d --build
 
 # Wait for services to be ready
-echo "⏳ Waiting for app setup to complete..."
+echo "⏳ Waiting for entrypoint.sh to finish (DB/Redis/Discovery)..."
 until docker compose exec -T safespace-app test -f /tmp/app-ready; do
     echo "Setup still in progress... (checking again in 5s)"
     sleep 5
 done
-echo "✅ App is ready! Run migrations next"
 
 # Run database migrations
 echo "🗄️  Running database migrations..."
 docker compose exec -T safespace-app php artisan migrate --force
-
-# Build frontend assets
-echo "🎨 Building frontend assets..."
-docker compose exec -T safespace-app npm run build
 
 # Optimize Laravel
 echo "⚡ Optimizing Laravel application..."
