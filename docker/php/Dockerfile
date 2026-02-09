@@ -70,7 +70,7 @@ COPY . .
 # Generate the autoloader WITHOUT running scripts
 # We use --no-scripts here too to prevent Artisan from booting 
 # because the DB/Redis aren't available during 'docker build'
-RUN composer dump-autoload --optimize --no-scripts --no-dev
+RUN composer dump-autoload --optimize --no-scripts --no-dev 
 
 # Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
 # Use increased memory limit for npm install as well
