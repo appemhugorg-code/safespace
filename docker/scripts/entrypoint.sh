@@ -411,23 +411,24 @@ fi
 echo "✅ !!!Reverb installation completed!!!"
 sleep 5;
 
+
+echo "✅ Setup complete. Creating ready flag."
+touch /tmp/app-ready
+
 # Start supervisord if it's the main command
 if [ "$1" = "/usr/bin/supervisord" ]; then
     echo "Starting supervisord..."
     # Test the configuration first
     supervisord -t -c /etc/supervisor/conf.d/supervisord.conf
     if [ $? -eq 0 ]; then
-        echo "Supervisor configuration is valid"
+        echo "✅ Supervisor configuration is valid"
     else
-        echo "ERROR: Supervisor configuration is invalid!"
+        echo "❌ ERROR: Supervisor configuration is invalid!"
         exit 1
     fi
 fi
 echo "✅ !!!Supervisord setup completed!!!"
 sleep 5;
-
-echo "✅ Setup complete. Creating ready flag."
-touch /tmp/app-ready
 
 # Execute the main container process (usually php-fpm)
 exec "$@"
