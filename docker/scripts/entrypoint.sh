@@ -159,7 +159,8 @@ while [ $REDIS_READY -eq 0 ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             
             # Test Laravel Redis connection
             echo "Testing Laravel Redis connection..."
-            if php artisan redis:test 2>/dev/null | grep -q "Redis ping successful"; then
+            # if php artisan redis:test 2>/dev/null | grep -q "Redis ping successful"; then
+            if php artisan redis:test >/dev/null 2>&1; then
                 REDIS_READY=1
                 echo "✅ Laravel Redis connection established!"
             else
