@@ -289,6 +289,11 @@ else
     echo "Roles already exist, skipping seeding..."
 fi
 
+
+echo "🔄 Running final package discovery..."
+# This links your installed packages to Laravel
+php artisan package:discover --ansi 
+
 # Clear and cache configuration
 echo "Optimizing application..."
 php artisan config:cache
