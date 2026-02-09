@@ -64,6 +64,9 @@ else
     echo "✅ Composer dependencies already installed."
 fi
 
+echo "✅ !!!Dependencies installation completed!!!"
+sleep 5;
+
 # Ensure proper permissions for vendor directory
 chown -R www-data:www-data /var/www/html/vendor 2>/dev/null || true
 chmod -R 755 /var/www/html/vendor 2>/dev/null || true
@@ -107,6 +110,9 @@ if [ $DB_READY -eq 0 ]; then
     php artisan tinker --execute="echo 'DB Host: ' . config('database.connections.pgsql.host'); echo 'DB Name: ' . config('database.connections.pgsql.database');"
     exit 1
 fi
+
+echo "✅ !!!Database installation completed!!!"
+sleep 5;
 
 # Wait for Redis to be ready (REQUIRED)
 echo "Waiting for Redis connection..."
@@ -215,6 +221,8 @@ try {
 }
 " 2>/dev/null | grep -q "REDIS_CONFIG_SUCCESS"; then
     echo "✅ Redis configuration successful!"
+    echo "✅ !!!Redis installation completed!!!"
+    sleep 5;
 else
     echo "❌ ERROR: Redis configuration failed!"
     echo "This is a critical error - Redis is required for this application."
@@ -235,6 +243,9 @@ if [ "$APP_KEY" = "base64:GENERATE_NEW_KEY_FOR_PRODUCTION" ] || [ -z "$APP_KEY" 
     fi
 fi
 
+echo "✅ !!!App key generation completed!!!"
+sleep 5;
+
 # Generate Reverb keys if not set
 if [ -z "$REVERB_APP_KEY" ] || [ "$REVERB_APP_KEY" = "your-reverb-app-key" ]; then
     echo "Generating Reverb app key..."
@@ -242,14 +253,8 @@ if [ -z "$REVERB_APP_KEY" ] || [ "$REVERB_APP_KEY" = "your-reverb-app-key" ]; th
     echo "REVERB_APP_KEY=${REVERB_APP_KEY}" >> .env.production
     export REVERB_APP_KEY
     echo "✅ Reverb app key generated: ${REVERB_APP_KEY}"
-fi
-
-if [ -z "$REVERB_APP_SECRET" ] || [ "$REVERB_APP_SECRET" = "your-reverb-app-secret" ]; then
-    echo "Generating Reverb app secret..."
-    REVERB_APP_SECRET=$(openssl rand -hex 32)
-    echo "REVERB_APP_SECRET=${REVERB_APP_SECRET}" >> .env.production
-    export REVERB_APP_SECRET
-    echo "✅ Reverb app secret generated: ${REVERB_APP_SECRET}"
+    echo "✅ !!!Reverb key generation completed!!!"
+    sleep 5;
 fi
 
 # Publish Reverb configuration
@@ -259,11 +264,15 @@ if php artisan vendor:publish --provider="Laravel\Reverb\ReverbServiceProvider" 
 else
     echo "⚠️  WARNING: Failed to publish Reverb configuration (may already exist)"
 fi
+echo "✅ !!!Reverb config publishing completed!!!"
+sleep 5;
 
 # Run database migrations
 echo "Running database migrations..."
 if php artisan migrate --force; then
     echo "✅ Database migrations completed"
+    echo "✅ !!!Database migration completed!!!"
+sleep 5;
 else
     echo "❌ ERROR: Database migrations failed!"
     exit 1
@@ -289,7 +298,8 @@ if [ "$ROLES_EXIST" = "0" ]; then
 else
     echo "Roles already exist, skipping seeding..."
 fi
-
+echo "✅ !!!Database seeding completed!!!"
+sleep 5;
 
 echo "🔄 Running final package discovery..."
 # This links your installed packages to Laravel
@@ -398,6 +408,8 @@ else
     echo "❌ ERROR: Failed to start Reverb server"
     exit 1
 fi
+echo "✅ !!!Reverb installation completed!!!"
+sleep 5;
 
 # Start supervisord if it's the main command
 if [ "$1" = "/usr/bin/supervisord" ]; then
@@ -411,6 +423,8 @@ if [ "$1" = "/usr/bin/supervisord" ]; then
         exit 1
     fi
 fi
+echo "✅ !!!Supervisord setup completed!!!"
+sleep 5;
 
 echo "✅ Setup complete. Creating ready flag."
 touch /tmp/app-ready
