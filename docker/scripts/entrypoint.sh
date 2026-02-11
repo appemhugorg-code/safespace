@@ -411,6 +411,8 @@ fi
 echo "✅ !!!Reverb installation completed!!!"
 sleep 5;
 
+echo "🔄 Generating Wayfinder types..."
+php artisan wayfinder:generate --with-form
 
 echo "✅ Setup complete. Creating ready flag."
 touch /tmp/app-ready

@@ -76,27 +76,10 @@ COPY . .
 # because the DB/Redis aren't available during 'docker build'
 RUN composer dump-autoload --optimize --no-scripts --no-dev
 
-# Run this to see the REAL stack trace if it fails
-# 1. Update the debug line to test (this should now pass)
-# Use these variables to completely bypass Redis initialization
-RUN APP_KEY=base64:$(openssl rand -base64 32) \
-    DB_CONNECTION=sqlite \
-    DB_DATABASE=:memory: \
-    CACHE_STORE=array \
-    SESSION_DRIVER=array \
-    QUEUE_CONNECTION=sync \
-    REDIS_CLIENT=phpredis \
-    REDIS_HOST=127.0.0.1 \
-    php artisan wayfinder:generate --with-form -vvv
-
 # Run the Vite build (Uses the baked-in node_modules)
-# RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
-# 2. Run the build with mock variables to allow Laravel to boot without a DB
-RUN APP_KEY=base64:$(openssl rand -base64 32) \
-    DB_CONNECTION=sqlite \
-    DB_DATABASE=:memory: \
-    NODE_OPTIONS="--max-old-space-size=2048" \
-    npm run build
+# Just create the folder so Vite doesn't crash during build
+RUN mkdir -p resources/js/wayfinder && touch resources/js/wayfinder/routes.ts
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 # Build Frontend Assets (Production)
 # We do this here so the server doesn't have to do it at runtime
