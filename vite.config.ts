@@ -14,6 +14,7 @@ export default defineConfig({
         react(),
         tailwindcss(),
         wayfinder({
+            disable: process.env.NODE_ENV === 'production', 
             formVariants: true,
         }),
     ],
