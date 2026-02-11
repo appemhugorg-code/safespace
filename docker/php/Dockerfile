@@ -77,7 +77,14 @@ COPY . .
 RUN composer dump-autoload --optimize --no-scripts --no-dev
 
 # Run this to see the REAL stack trace if it fails
-RUN APP_DEBUG=true php artisan wayfinder:generate --with-form -vvv
+# 1. Update the debug line to test (this should now pass)
+RUN APP_KEY=base64:$(openssl rand -base64 32) \
+    DB_CONNECTION=sqlite \
+    DB_DATABASE=:memory: \
+    REDIS_CLIENT=mock \
+    REDIS_DRIVER=array \
+    CACHE_STORE=array \
+    php artisan wayfinder:generate --with-form -vvv
 
 # Run the Vite build (Uses the baked-in node_modules)
 # RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
