@@ -76,6 +76,9 @@ COPY . .
 # because the DB/Redis aren't available during 'docker build'
 RUN composer dump-autoload --optimize --no-scripts --no-dev
 
+# Run this to see the REAL stack trace if it fails
+RUN APP_DEBUG=true php artisan wayfinder:generate --with-form -vvv
+
 # Run the Vite build (Uses the baked-in node_modules)
 # RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 # 2. Run the build with mock variables to allow Laravel to boot without a DB
