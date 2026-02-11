@@ -78,12 +78,15 @@ RUN composer dump-autoload --optimize --no-scripts --no-dev
 
 # Run this to see the REAL stack trace if it fails
 # 1. Update the debug line to test (this should now pass)
+# Use these variables to completely bypass Redis initialization
 RUN APP_KEY=base64:$(openssl rand -base64 32) \
     DB_CONNECTION=sqlite \
     DB_DATABASE=:memory: \
-    REDIS_CLIENT=mock \
-    REDIS_DRIVER=array \
     CACHE_STORE=array \
+    SESSION_DRIVER=array \
+    QUEUE_CONNECTION=sync \
+    REDIS_CLIENT=phpredis \
+    REDIS_HOST=127.0.0.1 \
     php artisan wayfinder:generate --with-form -vvv
 
 # Run the Vite build (Uses the baked-in node_modules)
