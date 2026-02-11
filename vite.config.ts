@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
+const isProduction = process.argv.includes('build'); // Explicitly check if running 'vite build'
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -13,11 +15,11 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        wayfinder({
+        !isProduction && wayfinder({
             disable: process.env.NODE_ENV === 'production', 
             formVariants: true,
         }),
-    ],
+    ].filter(Boolean),
     esbuild: {
         jsx: 'automatic',
     },
