@@ -77,7 +77,13 @@ COPY . .
 RUN composer dump-autoload --optimize --no-scripts --no-dev
 
 # Run the Vite build (Uses the baked-in node_modules)
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+# RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
+# 2. Run the build with mock variables to allow Laravel to boot without a DB
+RUN APP_KEY=base64:$(openssl rand -base64 32) \
+    DB_CONNECTION=sqlite \
+    DB_DATABASE=:memory: \
+    NODE_OPTIONS="--max-old-space-size=2048" \
+    npm run build
 
 # Build Frontend Assets (Production)
 # We do this here so the server doesn't have to do it at runtime
