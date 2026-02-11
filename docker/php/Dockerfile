@@ -76,24 +76,6 @@ COPY . .
 # because the DB/Redis aren't available during 'docker build'
 RUN composer dump-autoload --optimize --no-scripts --no-dev
 
-# Run the Vite build (Uses the baked-in node_modules)
-# Just create the folder so Vite doesn't crash during build
-RUN mkdir -p resources/js/wayfinder && touch resources/js/wayfinder/routes.ts
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
-
-# Build Frontend Assets (Production)
-# We do this here so the server doesn't have to do it at runtime
-# RUN NODE_OPTIONS="--max-old-space-size=2048" npm install && \
-#     NODE_OPTIONS="--max-old-space-size=2048" npm run build && \
-#     npm prune --production && \
-#     rm -rf /root/.npm
-
-# Install Node.js dependencies (will be rebuilt in entrypoint for fresh assets)
-# Use increased memory limit for npm install as well
-# RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
-
-# Note: Frontend assets will be built in entrypoint.sh to ensure latest changes
-
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
