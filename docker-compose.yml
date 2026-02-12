@@ -37,9 +37,8 @@ services:
     volumes:
       - public_assets:/var/www/html/public:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot-etc:/etc/letsencrypt:ro
-      - certbot-var:/var/lib/letsencrypt:ro
-      - webroot:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       - safespace-app
     networks:
@@ -85,11 +84,10 @@ services:
 
   certbot:
     image: certbot/certbot
+    container_name: safespace-certbot
     volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - webroot:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --force-renewal -d app.emhug.org --email app.emhug.org@gmail.com --agree-tos
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
 
 # Named volumes for persistent data
 volumes:
@@ -99,9 +97,6 @@ volumes:
     driver: local
   public_assets:
     driver: local
-  certbot-etc:
-  certbot-var:
-  webroot:
 
 # Network for service communication
 networks:
