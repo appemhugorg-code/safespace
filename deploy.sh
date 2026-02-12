@@ -7,29 +7,15 @@ set -e
 # --- Configuration ---
 DOMAIN="app.emhug.org"
 EMAIL="app.emhug.org@gmail.com"
-CERT_DIR="./certbot/conf/live/$DOMAIN"
-WEBROOT_DIR="./certbot/www"
 
 echo "🚀 Starting SafeSpace HTTP production deployment..."
 
-# 1. PRE-FLIGHT: Ensure directories and SSL exist
-echo "📂 Preparing SSL directories..."
-mkdir -p "$CERT_DIR"
-mkdir -p "$WEBROOT_DIR"
+echo "🔐 Checking SSL Certificate for $DOMAIN..."
 
-if [ ! -f "$CERT_DIR/fullchain.pem" ]; then
-    echo "📜 SSL Certificate missing. Creating dummy cert for initial Nginx boot..."
-    
-    # Create a 1-day dummy certificate so Nginx doesn't crash if SSL config is active
-    openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-        -keyout "$CERT_DIR/privkey.pem" \
-        -out "$CERT_DIR/fullchain.pem" \
-        -subj "/CN=localhost"
-    DUMMY_ACTIVE=true
-else
-    echo "✅ SSL Certificate found."
-    DUMMY_ACTIVE=false
-fi
+WEBROOT_DIR="./certbot/www"
+CERT_DIR="./certbot/conf/live/$DOMAIN"
+
+mkdir -p "$WEBROOT_DIR"
 
 # Stop existing containers
 echo "📦 Stopping existing containers..."
@@ -50,20 +36,23 @@ until docker compose exec -T safespace-app test -f /tmp/app-ready; do
     sleep 5
 done
 
-# --- ADD SSL LOGIC START, SSL UPGRADE (Only if dummy was used)
-if [ "$DUMMY_ACTIVE" = true ]; then
-    echo "🌐 Upgrading dummy certificate to real Let's Encrypt cert..."
+# Check if the real certificate already exists on the host disk
+if [ ! -f "$CERT_DIR/fullchain.pem" ]; then
+    echo "📜 Certificate not found. Requesting from Let's Encrypt..."
     
-    # Run certbot via docker using the shared webroot
+    # Run the request (Nginx MUST be running on Port 80 for this to work)
     docker compose run --rm certbot certonly --webroot \
         --webroot-path=/var/www/certbot \
         -d "$DOMAIN" --email "$EMAIL" \
         --agree-tos --no-eff-email --non-interactive
-
-    echo "🔄 Real certificate obtained. Reloading Nginx..."
-    docker compose exec -T nginx nginx -s reload
+    
+    echo "✅ SSL Certificate obtained! You can now enable SSL in nginx.conf."
+else
+    echo "✅ SSL Certificate already exists. Checking for renewal..."
+    docker compose run --rm certbot renew
 fi
-# --- ADD SSL LOGIC END ---
+# --- END SSL LOGIC ---
+
 
 # Run database migrations
 echo "🗄️  Running database migrations..."
