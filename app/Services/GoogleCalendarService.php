@@ -39,11 +39,9 @@ class GoogleCalendarService
             Google_Service_Calendar::CALENDAR_EVENTS,
         ]);
 
-        // Set credentials from config or environment
-        $credentialsPath = config('services.google.credentials_path');
-        if ($credentialsPath && file_exists($credentialsPath)) {
-            $this->client->setAuthConfig($credentialsPath);
-        }
+        $this->client->setClientId(config('services.google.client_id'));
+        $this->client->setClientSecret(config('services.google.client_secret'));
+        $this->client->setRedirectUri(config('services.google.redirect'));
 
         $this->client->setAccessType('offline');
         $this->client->setPrompt('select_account consent');

@@ -11,6 +11,9 @@ Route::get('/', function () {
 Route::get('/health', [\App\Http\Controllers\HealthController::class, 'index'])->name('health');
 Route::get('/ping', [\App\Http\Controllers\HealthController::class, 'ping'])->name('ping');
 
+// Email test route (development only)
+Route::get('/test-email', [\App\Http\Controllers\EmailTestController::class, 'sendTest'])->name('test.email');
+
 // Reverb testing routes
 Route::get('/reverb-test', [\App\Http\Controllers\ReverbTestController::class, 'index'])->name('reverb.test');
 Route::get('/reverb/status', [\App\Http\Controllers\ReverbTestController::class, 'status'])->name('reverb.status');
@@ -85,6 +88,13 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+
+// Google OAuth routes
+Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/auth/google', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'redirect'])->name('google.auth');
+    Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'callback'])->name('google.callback');
+    Route::post('/auth/google/disconnect', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
+});
 
 // Broadcasting authentication for private channels
 Broadcast::routes(['middleware' => ['auth']]);

@@ -20,6 +20,19 @@ class GoogleMeetService
     public function createTherapySession(Appointment $appointment): bool
     {
         try {
+            // Set therapist's access token
+            $therapist = $appointment->therapist;
+            
+            if (!$therapist->google_access_token) {
+                Log::warning('Therapist does not have Google access token', [
+                    'therapist_id' => $therapist->id,
+                    'appointment_id' => $appointment->id,
+                ]);
+                return false;
+            }
+            
+            $this->calendarService->setAccessToken(decrypt($therapist->google_access_token));
+            
             $eventData = $this->calendarService->createEvent($appointment);
 
             if (! $eventData) {
