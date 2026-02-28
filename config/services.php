@@ -47,6 +47,8 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
         'credentials_path' => env('GOOGLE_CREDENTIALS_PATH', storage_path('app/google-credentials.json')),
+        'platform_email' => env('GOOGLE_PLATFORM_EMAIL', 'app.emhug.org@gmail.com'),
+        'platform_token' => env('GOOGLE_PLATFORM_TOKEN'),
     ],
 
 ];

@@ -16,22 +16,23 @@ class GoogleMeetService
 
     /**
      * Create a therapy session with Google Meet integration.
+     * Uses platform's Google account, not therapist's personal account.
      */
     public function createTherapySession(Appointment $appointment): bool
     {
         try {
-            // Set therapist's access token
-            $therapist = $appointment->therapist;
+            // Use platform's Google account (from .env)
+            // This allows creating meetings even if therapist doesn't have Google
+            $platformToken = $this->getPlatformGoogleToken();
             
-            if (!$therapist->google_access_token) {
-                Log::warning('Therapist does not have Google access token', [
-                    'therapist_id' => $therapist->id,
+            if (!$platformToken) {
+                Log::warning('Platform Google token not configured', [
                     'appointment_id' => $appointment->id,
                 ]);
                 return false;
             }
             
-            $this->calendarService->setAccessToken(decrypt($therapist->google_access_token));
+            $this->calendarService->setAccessToken($platformToken);
             
             $eventData = $this->calendarService->createEvent($appointment);
 
@@ -44,7 +45,7 @@ class GoogleMeetService
                 'google_event_id' => $eventData['event_id'],
                 'google_meet_link' => $eventData['meet_link'],
                 'google_calendar_data' => $eventData['event_data'],
-                'meeting_link' => $eventData['meet_link'], // Also update the main meeting_link field
+                'meeting_link' => $eventData['meet_link'],
             ]);
 
             Log::info('Google Meet session created', [
@@ -63,6 +64,27 @@ class GoogleMeetService
 
             return false;
         }
+    }
+
+    /**
+     * Get platform's Google access token.
+     * This is a centralized account for creating all meetings.
+     */
+    private function getPlatformGoogleToken(): ?string
+    {
+        $token = config('services.google.platform_token');
+        
+        if (!$token) {
+            // Try to get from admin user or platform settings
+            $adminUser = \App\Models\User::where('email', config('services.google.platform_email'))
+                ->first();
+            
+            if ($adminUser && $adminUser->google_access_token) {
+                return decrypt($adminUser->google_access_token);
+            }
+        }
+        
+        return $token;
     }
 
     /**

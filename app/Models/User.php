@@ -34,6 +34,9 @@ class User extends Authenticatable // implements MustVerifyEmail // Disabled unt
         'phone_number',
         'full_phone_number',
         'phone_verified_at',
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
     ];
 
     /**

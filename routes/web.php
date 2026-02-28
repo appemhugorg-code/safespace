@@ -96,6 +96,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/auth/google/disconnect', [\App\Http\Controllers\Auth\GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
 });
 
+// Platform Google OAuth (no auth required for setup)
+Route::get('/platform/google/connect', [\App\Http\Controllers\PlatformGoogleController::class, 'redirect'])->name('platform.google.connect');
+Route::get('/platform/google/callback', [\App\Http\Controllers\PlatformGoogleController::class, 'callback'])->name('platform.google.callback');
+
 // Broadcasting authentication for private channels
 Broadcast::routes(['middleware' => ['auth']]);
 require __DIR__.'/admin.php';
