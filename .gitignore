@@ -12,6 +12,7 @@
 /vendor
 .DS_Store
 .env
+.env.production
 nul
 # .env.backup
 # .env.production
