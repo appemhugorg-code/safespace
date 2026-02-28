@@ -21,8 +21,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
-    ports:
-      - "8080:8080"  # Expose Reverb WebSocket port
+    # ports:
+    #   - "8080:8080"  # Expose Reverb WebSocket port
     networks:
       - safespace-network
 
