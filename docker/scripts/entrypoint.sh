@@ -389,27 +389,27 @@ else
     echo "⚠️  WARNING: Reverb configuration may have issues"
 fi
 
-if php artisan reverb:start --host=0.0.0.0 --port=8080 --no-interaction &
-then
-    REVERB_PID=$!
-    echo "✅ Reverb server started with PID: $REVERB_PID"
+# if php artisan reverb:start --host=0.0.0.0 --port=8080 --no-interaction &
+# then
+#     REVERB_PID=$!
+#     echo "✅ Reverb server started with PID: $REVERB_PID"
     
-    # Give Reverb a moment to start
-    sleep 3
+#     # Give Reverb a moment to start
+#     sleep 3
     
-    # Verify Reverb is running
-    if kill -0 $REVERB_PID 2>/dev/null; then
-        echo "✅ Reverb server is running"
-    else
-        echo "❌ ERROR: Reverb server failed to start properly"
-        exit 1
-    fi
-else
-    echo "❌ ERROR: Failed to start Reverb server"
-    exit 1
-fi
-echo "✅ !!!Reverb installation completed!!!"
-sleep 5;
+#     # Verify Reverb is running
+#     if kill -0 $REVERB_PID 2>/dev/null; then
+#         echo "✅ Reverb server is running"
+#     else
+#         echo "❌ ERROR: Reverb server failed to start properly"
+#         exit 1
+#     fi
+# else
+#     echo "❌ ERROR: Failed to start Reverb server"
+#     exit 1
+# fi
+# echo "✅ !!!Reverb installation completed!!!"
+# sleep 5;
 
 echo "🔄 Generating Wayfinder types..."
 php artisan wayfinder:generate --with-form
