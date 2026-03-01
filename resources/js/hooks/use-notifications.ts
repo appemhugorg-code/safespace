@@ -39,7 +39,7 @@ export function useNotifications() {
     }, [auth?.user]);
 
     useEffect(() => {
-        if (!auth?.user) return;
+        if (!auth?.user || !window.Echo) return;
 
         // Fetch initial notifications
         fetchNotifications();
@@ -67,7 +67,7 @@ export function useNotifications() {
         });
 
         return () => {
-            window.Echo.leave(`user.${userId}`);
+            window.Echo?.leave(`user.${userId}`);
         };
     }, [auth?.user, fetchNotifications]);
 

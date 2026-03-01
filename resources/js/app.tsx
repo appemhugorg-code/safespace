@@ -90,21 +90,23 @@ setTimeout(() => {
             });
 
             // Add connection event listeners for debugging
-            window.Echo.connector.pusher.connection.bind('connected', () => {
-                console.log('✅ Echo WebSocket connected successfully');
-            });
+            if (window.Echo?.connector?.pusher?.connection) {
+                window.Echo.connector.pusher.connection.bind('connected', () => {
+                    console.log('✅ Echo WebSocket connected successfully');
+                });
 
-            window.Echo.connector.pusher.connection.bind('disconnected', () => {
-                console.log('❌ Echo WebSocket disconnected');
-            });
+                window.Echo.connector.pusher.connection.bind('disconnected', () => {
+                    console.log('❌ Echo WebSocket disconnected');
+                });
 
-            window.Echo.connector.pusher.connection.bind('error', (error: any) => {
-                console.error('❌ Echo WebSocket error:', error);
-            });
+                window.Echo.connector.pusher.connection.bind('error', (error: any) => {
+                    console.error('❌ Echo WebSocket error:', error);
+                });
 
-            window.Echo.connector.pusher.connection.bind('state_change', (states: any) => {
-                console.log('🔄 Echo connection state changed:', states.previous, '→', states.current);
-            });
+                window.Echo.connector.pusher.connection.bind('state_change', (states: any) => {
+                    console.log('🔄 Echo connection state changed:', states.previous, '→', states.current);
+                });
+            }
 
         }).catch((error) => {
             console.error('❌ Failed to initialize Echo:', error);

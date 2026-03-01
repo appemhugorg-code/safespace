@@ -98,8 +98,9 @@ export function usePanicAlerts() {
         });
 
         // Also listen to emergency alerts channel if user has appropriate role
+        let emergencyChannel;
         if (user.roles?.some((role: any) => ['admin', 'therapist', 'guardian'].includes(role.name))) {
-            const emergencyChannel = window.Echo.private('emergency-alerts');
+            emergencyChannel = window.Echo.private('emergency-alerts');
 
             emergencyChannel.listen('.panic-alert.triggered', (event: PanicAlertEvent) => {
                 console.log('Emergency alert received on emergency channel:', event);
@@ -132,8 +133,7 @@ export function usePanicAlerts() {
             userChannel.stopListening('.panic-alert.triggered');
             userChannel.stopListening('.panic-alert.status-changed');
 
-            if (user.roles?.some((role: any) => ['admin', 'therapist', 'guardian'].includes(role.name))) {
-                const emergencyChannel = window.Echo.private('emergency-alerts');
+            if (emergencyChannel) {
                 emergencyChannel.stopListening('.panic-alert.triggered');
                 emergencyChannel.stopListening('.panic-alert.status-changed');
             }
