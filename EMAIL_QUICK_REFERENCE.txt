@@ -1,0 +1,64 @@
+╔══════════════════════════════════════════════════════════════╗
+║         EMAIL NOTIFICATIONS - QUICK REFERENCE                ║
+╚══════════════════════════════════════════════════════════════╝
+
+STATUS: ✅ ACTIVE AND READY
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📧 WHAT'S CONFIGURED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ SMTP: Gmail (smtp.gmail.com:587 with TLS)
+✓ From: app.emhug.org@gmail.com
+✓ Queue Worker: Running
+✓ Welcome Email: Automatic on registration
+✓ Fallback: straycat.ai@gmail.com (for test emails)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 QUICK TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: http://localhost:8000/register
+2. Fill form with YOUR REAL EMAIL
+3. Submit registration
+4. Check your inbox (and spam folder)
+5. Look for "Welcome to SafeSpace" email
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 MONITORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Watch email logs in real-time:
+$ tail -f storage/logs/laravel.log | grep -i email
+
+Check queue worker status:
+$ ps aux | grep queue:work
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Email not received?
+→ Check spam folder
+→ Check logs: tail -f storage/logs/laravel.log
+→ Verify email address is real (not @example.com)
+
+Queue worker stopped?
+→ Restart: php artisan queue:work
+
+Configuration changes not applied?
+→ Clear cache: php artisan config:clear
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Emails are sent IMMEDIATELY (synchronous)
+• Test emails (@safespace.test) go to fallback address
+• Real emails go directly to recipient
+• Gmail limit: ~500 emails/day
+• Email template: resources/views/emails/welcome.blade.php
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For detailed documentation, see: EMAIL_NOTIFICATIONS_STATUS.md

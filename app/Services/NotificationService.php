@@ -18,6 +18,23 @@ class NotificationService
     {
         $this->emailService = $emailService;
     }
+
+    /**
+     * Generate role-specific connection URL
+     */
+    protected function getConnectionUrl(User $user, int $connectionId): string
+    {
+        if ($user->hasRole('therapist')) {
+            return "/therapist/connections/{$connectionId}";
+        } elseif ($user->hasRole('guardian')) {
+            return "/guardian/connections/{$connectionId}";
+        } elseif ($user->hasRole('child')) {
+            return "/child/connections/{$connectionId}";
+        }
+        
+        return "/connections/{$connectionId}";
+    }
+
     /**
      * Notification type constants
      */
@@ -192,7 +209,7 @@ class NotificationService
                 'client_type' => $clientType,
                 'assigned_by' => $assignedBy->name,
             ],
-            "/connections/{$connection->id}",
+            $this->getConnectionUrl($therapist, $connection->id),
             'high'
         );
         
@@ -220,7 +237,7 @@ class NotificationService
                 'therapist_id' => $therapist->id,
                 'assigned_by' => $assignedBy->name,
             ],
-            "/connections/{$connection->id}",
+            $this->getConnectionUrl($client, $connection->id),
             'high'
         );
         
@@ -252,7 +269,7 @@ class NotificationService
                         'therapist_id' => $therapist->id,
                         'assigned_by' => $assignedBy->name,
                     ],
-                    "/connections/{$connection->id}",
+                    $this->getConnectionUrl($guardian, $connection->id),
                     'high'
                 );
                 
@@ -306,7 +323,7 @@ class NotificationService
                 'request_type' => $requestType,
                 'target_client_id' => $request->target_client_id,
             ],
-            "/requests/{$request->id}",
+            "/therapist/connections/requests",
             'high'
         );
         
@@ -364,7 +381,7 @@ class NotificationService
                 'therapist_id' => $therapist->id,
                 'approved_by' => $approvedBy->name,
             ],
-            "/connections/{$connection->id}",
+            $this->getConnectionUrl($requester, $connection->id),
             'high'
         );
         
@@ -394,7 +411,7 @@ class NotificationService
                     'therapist_id' => $therapist->id,
                     'assigned_by' => $approvedBy->name,
                 ],
-                "/connections/{$connection->id}",
+                $this->getConnectionUrl($client, $connection->id),
                 'high'
             );
             
