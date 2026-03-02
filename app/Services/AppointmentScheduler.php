@@ -34,78 +34,29 @@ class AppointmentScheduler
      */
     public function getAvailableSlots(int $therapistId, Carbon $date, int $durationMinutes = null): Collection
     {
-        $therapist = User::findOrFail($therapistId);
-
-        // Check for override on this date
-        $override = TherapistAvailabilityOverride::where('therapist_id', $therapistId)
+        // Get available slots from the new slot-based system
+        $slots = \App\Models\TherapistAvailabilitySlot::where('therapist_id', $therapistId)
             ->forDate($date)
-            ->first();
-
-        if ($override && $override->isUnavailable()) {
-            return collect(); // No slots available
-        }
-
-        // Get regular availability for this day of week
-        $availabilities = TherapistAvailability::where('therapist_id', $therapistId)
-            ->forDay($date->dayOfWeek)
-            ->active()
+            ->available()
+            ->orderBy('start_time')
             ->get();
 
-        if ($availabilities->isEmpty() && ! $override) {
-            return collect(); // No availability set
-        }
-
-        // Use override times if custom hours, otherwise use regular availability
-        if ($override && $override->isCustomHours()) {
-            $timeRanges = collect([[
-                'start' => Carbon::parse($override->start_time),
-                'end' => Carbon::parse($override->end_time),
-            ]]);
-        } else {
-            $timeRanges = $availabilities->map(function ($availability) {
-                return [
-                    'start' => Carbon::parse($availability->start_time),
-                    'end' => Carbon::parse($availability->end_time),
-                ];
-            });
-        }
-
-        // Get existing appointments for this therapist on this date
-        $existingAppointments = Appointment::where('therapist_id', $therapistId)
-            ->whereDate('scheduled_at', $date)
-            ->whereIn('status', ['requested', 'confirmed'])
-            ->get();
-
-        // Generate time slots - return actual availability slots with their natural durations
-        $slots = collect();
-
-        foreach ($timeRanges as $range) {
-            $slotStart = $date->copy()->setTimeFrom($range['start']);
-            $slotEnd = $date->copy()->setTimeFrom($range['end']);
+        // Transform to expected format
+        return $slots->map(function ($slot) use ($date) {
+            $slotStart = $date->copy()->setTimeFromTimeString($slot->start_time);
+            $slotEnd = $date->copy()->setTimeFromTimeString($slot->end_time);
             $slotDuration = $slotStart->diffInMinutes($slotEnd);
 
-            // Check if slot conflicts with existing appointments
-            $hasConflict = $existingAppointments->contains(function ($appointment) use ($slotStart, $slotEnd) {
-                $appointmentStart = $appointment->scheduled_at;
-                $appointmentEnd = $appointment->scheduled_at->copy()->addMinutes($appointment->duration_minutes);
-
-                return $slotStart->lt($appointmentEnd) && $slotEnd->gt($appointmentStart);
-            });
-
-            // Only include future slots without conflicts
-            if (! $hasConflict && $slotStart->isFuture()) {
-                $slots->push([
-                    'start' => $slotStart->copy(),
-                    'end' => $slotEnd->copy(),
-                    'duration_minutes' => $slotDuration,
-                    'formatted_time' => $slotStart->format('g:i A'),
-                    'formatted_range' => $slotStart->format('g:i A') . ' - ' . $slotEnd->format('g:i A') . ' (' . $slotDuration . ' min)',
-                    'available' => true,
-                ]);
-            }
-        }
-
-        return $slots;
+            return [
+                'id' => $slot->id,
+                'start' => $slotStart,
+                'end' => $slotEnd,
+                'duration_minutes' => $slotDuration,
+                'formatted_time' => $slotStart->format('g:i A'),
+                'formatted_range' => $slotStart->format('g:i A') . ' - ' . $slotEnd->format('g:i A') . ' (' . $slotDuration . ' min)',
+                'available' => true,
+            ];
+        });
     }
 
     /**

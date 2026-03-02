@@ -19,6 +19,7 @@ interface User {
 }
 
 interface AvailableSlot {
+    id?: number;
     time: string;
     datetime: string;
     display: string;
@@ -42,7 +43,9 @@ export default function CreateAppointment({ userRole, children, therapists, pati
     const { toast } = useToast();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+    const [availableDates, setAvailableDates] = useState<string[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
+    const [loadingDates, setLoadingDates] = useState(false);
 
     const form = useForm({
         child_id: child?.id.toString() || '',
@@ -50,6 +53,7 @@ export default function CreateAppointment({ userRole, children, therapists, pati
         scheduled_at: '',
         duration_minutes: 60, // Will be set from selected slot
         notes: '',
+        slot_id: '', // Add slot_id to track which slot is being booked
     });
 
     // Handle flash messages
@@ -69,6 +73,16 @@ export default function CreateAppointment({ userRole, children, therapists, pati
         }
     }, [flash, toast]);
 
+    // Fetch available dates when therapist is selected
+    useEffect(() => {
+        if (form.data.therapist_id) {
+            fetchAvailableDates();
+        } else {
+            setAvailableDates([]);
+            setSelectedDate(undefined);
+        }
+    }, [form.data.therapist_id]);
+
     useEffect(() => {
         if (form.data.therapist_id && selectedDate) {
             fetchAvailableSlots();
@@ -77,17 +91,45 @@ export default function CreateAppointment({ userRole, children, therapists, pati
         }
     }, [form.data.therapist_id, selectedDate]);
 
+    const fetchAvailableDates = async () => {
+        if (!form.data.therapist_id) return;
+
+        setLoadingDates(true);
+        try {
+            const url = `/api/appointments/available-dates?therapist_id=${form.data.therapist_id}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch available dates');
+            }
+
+            const dates = await response.json();
+            setAvailableDates(dates);
+        } catch (error) {
+            console.error('Error fetching available dates:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load available dates',
+                variant: 'destructive',
+            });
+            setAvailableDates([]);
+        } finally {
+            setLoadingDates(false);
+        }
+    };
+
     const fetchAvailableSlots = async () => {
         if (!selectedDate || !form.data.therapist_id) return;
 
+        const dateString = selectedDate.toISOString().split('T')[0];
         console.log('Fetching slots for:', {
-            date: selectedDate.toISOString().split('T')[0],
-            therapistId: form.data.therapist_id
+            date: dateString,
+            therapistId: form.data.therapist_id,
+            selectedDate: selectedDate
         });
 
         setLoadingSlots(true);
         try {
-            const dateString = selectedDate.toISOString().split('T')[0];
             const url = `/api/appointments/available-slots?therapist_id=${form.data.therapist_id}&date=${dateString}`;
             console.log('API URL:', url);
 
@@ -104,6 +146,7 @@ export default function CreateAppointment({ userRole, children, therapists, pati
 
             const slots = await response.json();
             console.log('Received slots:', slots);
+            console.log('Slots count:', slots.length);
             setAvailableSlots(slots);
         } catch (error) {
             console.error('Error fetching available slots:', error);
@@ -133,6 +176,7 @@ export default function CreateAppointment({ userRole, children, therapists, pati
                 ...form.data,
                 scheduled_at: scheduledAt,
                 duration_minutes: slot.duration_minutes,
+                slot_id: slot.id?.toString() || '',
             });
         }
     };
@@ -201,6 +245,16 @@ export default function CreateAppointment({ userRole, children, therapists, pati
 
                 <div className="flex justify-center">
                     <form onSubmit={handleSubmit} className="w-full max-w-2xl space-y-6">
+                        {/* No availability warning */}
+                        {form.data.therapist_id && !loadingDates && availableDates.length === 0 && (
+                            <Alert className="border-orange-200 bg-orange-50">
+                                <AlertCircle className="h-4 w-4 text-orange-600" />
+                                <AlertDescription className="text-orange-800">
+                                    This therapist has no available slots in the next 60 days. Please select a different therapist or check back later.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
                         {/* Selection Card */}
                         <Card>
                             <CardHeader>
@@ -293,13 +347,27 @@ export default function CreateAppointment({ userRole, children, therapists, pati
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Date</Label>
-                                    <DatePicker
-                                        date={selectedDate}
-                                        onDateChange={handleDateChange}
-                                        placeholder="Select preferred date"
-                                        minDate={getMinDate()}
-                                        className="w-full"
-                                    />
+                                    {loadingDates ? (
+                                        <div className="flex items-center gap-2 p-3 border rounded-md text-muted-foreground">
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                            <span className="text-sm">Loading available dates...</span>
+                                        </div>
+                                    ) : availableDates.length === 0 && form.data.therapist_id ? (
+                                        <div className="p-3 border rounded-md bg-yellow-50 border-yellow-200">
+                                            <p className="text-sm text-yellow-800">
+                                                No available dates found for this therapist in the next 60 days.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <DatePicker
+                                            date={selectedDate}
+                                            onDateChange={handleDateChange}
+                                            placeholder="Select an available date"
+                                            minDate={getMinDate()}
+                                            availableDates={availableDates}
+                                            className="w-full"
+                                        />
+                                    )}
                                 </div>
 
                                 {selectedDate && form.data.therapist_id && (

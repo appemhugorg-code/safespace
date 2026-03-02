@@ -19,6 +19,7 @@ interface DatePickerProps {
     className?: string
     minDate?: Date
     maxDate?: Date
+    availableDates?: string[] // Array of date strings in 'YYYY-MM-DD' format
 }
 
 export function DatePicker({
@@ -29,6 +30,7 @@ export function DatePicker({
     className,
     minDate,
     maxDate,
+    availableDates,
 }: DatePickerProps) {
     return (
         <Popover>
@@ -54,6 +56,13 @@ export function DatePicker({
                     disabled={(date) => {
                         if (minDate && date < minDate) return true
                         if (maxDate && date > maxDate) return true
+                        
+                        // If availableDates is provided, only allow those dates
+                        if (availableDates && availableDates.length > 0) {
+                            const dateStr = format(date, 'yyyy-MM-dd')
+                            return !availableDates.includes(dateStr)
+                        }
+                        
                         return false
                     }}
                     initialFocus

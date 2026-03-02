@@ -212,6 +212,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::prefix('appointments')->group(function () {
         // Available slots API endpoint
         Route::get('/available-slots', [\App\Http\Controllers\AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
+        Route::get('/available-dates', [\App\Http\Controllers\AppointmentController::class, 'availableDates'])->name('appointments.available-dates');
 
         // Create different types of multi-participant appointments
         Route::post('/group-session', [\App\Http\Controllers\Api\MultiParticipantAppointmentController::class, 'createGroupSession']);

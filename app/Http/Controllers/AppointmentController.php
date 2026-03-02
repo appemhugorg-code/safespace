@@ -159,6 +159,7 @@ class AppointmentController extends Controller
             'scheduled_at' => 'required|date|after:now',
             'duration_minutes' => 'required|integer|min:30|max:120',
             'notes' => 'nullable|string|max:500',
+            'slot_id' => 'nullable|exists:therapist_availability_slots,id',
         ]);
 
         $therapistId = $request->therapist_id;
@@ -209,6 +210,17 @@ class AppointmentController extends Controller
             'notes' => $request->notes,
             'status' => $status,
         ]);
+
+        // Mark the slot as booked if slot_id is provided
+        if ($request->slot_id) {
+            $slot = \App\Models\TherapistAvailabilitySlot::find($request->slot_id);
+            if ($slot && !$slot->is_booked) {
+                $slot->update([
+                    'is_booked' => true,
+                    'appointment_id' => $appointment->id,
+                ]);
+            }
+        }
 
         // If appointment is confirmed (therapist-created), create Google Meet link and send emails
         if ($status === 'confirmed') {
@@ -440,6 +452,7 @@ class AppointmentController extends Controller
             // Transform slots to match frontend expectations
             $availableSlots = $slots->map(function ($slot) {
                 return [
+                    'id' => $slot['id'] ?? null,
                     'time' => $slot['start']->format('H:i'),
                     'datetime' => $slot['start']->toISOString(),
                     'display' => $slot['formatted_range'],
@@ -453,6 +466,56 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             \Log::error('Available slots error: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to fetch available slots', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get dates with available slots for a therapist (next 60 days).
+     */
+    public function availableDates(Request $request)
+    {
+        try {
+            $request->validate([
+                'therapist_id' => 'required|exists:users,id',
+            ]);
+
+            $user = auth()->user();
+            $therapistId = $request->therapist_id;
+
+            // Validate connection
+            if (!$user->hasRole('admin')) {
+                $hasConnection = false;
+                
+                if ($user->hasRole('therapist') && $user->id == $therapistId) {
+                    $hasConnection = true;
+                } else {
+                    $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
+                }
+                
+                if (!$hasConnection) {
+                    return response()->json(['error' => 'You do not have an active connection with this therapist'], 403);
+                }
+            }
+
+            $scheduler = app(\App\Services\AppointmentScheduler::class);
+            $startDate = Carbon::tomorrow();
+            $endDate = Carbon::today()->addDays(60);
+            
+            $availableDates = [];
+            $currentDate = $startDate->copy();
+            
+            while ($currentDate->lte($endDate)) {
+                $slots = $scheduler->getAvailableSlots($therapistId, $currentDate);
+                if ($slots->isNotEmpty()) {
+                    $availableDates[] = $currentDate->format('Y-m-d');
+                }
+                $currentDate->addDay();
+            }
+
+            return response()->json($availableDates);
+        } catch (\Exception $e) {
+            \Log::error('Available dates error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch available dates'], 500);
         }
     }
 

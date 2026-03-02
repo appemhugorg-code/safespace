@@ -144,7 +144,7 @@ export default function AppointmentsIndex({ appointments, currentUser, hasTherap
                                         Browse available therapists and send a connection request to get started.
                                     </p>
                                     <Button size="sm" asChild>
-                                        <Link href="/connections">
+                                        <Link href="/guardian/connections/search">
                                             Find Therapists
                                         </Link>
                                     </Button>
