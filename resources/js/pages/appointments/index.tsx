@@ -29,9 +29,10 @@ interface Appointment {
 interface Props {
     appointments: Appointment[];
     currentUser: User;
+    hasTherapistConnections?: boolean;
 }
 
-export default function AppointmentsIndex({ appointments, currentUser }: Props) {
+export default function AppointmentsIndex({ appointments, currentUser, hasTherapistConnections }: Props) {
     const { flash } = usePage().props as any;
 
     // Handle flash messages
@@ -130,6 +131,29 @@ export default function AppointmentsIndex({ appointments, currentUser }: Props) 
             <Head title="Appointments" />
 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
+                {/* Notice for guardians without therapist connections */}
+                {isGuardian && hasTherapistConnections === false && (
+                    <Card className="border-blue-200 bg-blue-50">
+                        <CardContent className="pt-6">
+                            <div className="flex items-start gap-3">
+                                <User className="h-5 w-5 text-blue-600 mt-0.5" />
+                                <div>
+                                    <h3 className="font-semibold text-blue-900 mb-1">Connect with a Therapist First</h3>
+                                    <p className="text-sm text-blue-800 mb-3">
+                                        To request appointments, you need to establish a connection with a therapist. 
+                                        Browse available therapists and send a connection request to get started.
+                                    </p>
+                                    <Button size="sm" asChild>
+                                        <Link href="/connections">
+                                            Find Therapists
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
@@ -156,12 +180,19 @@ export default function AppointmentsIndex({ appointments, currentUser }: Props) 
                     )}
 
                     {(isGuardian || isChild) && (
-                        <Button asChild>
-                            <Link href="/appointments/create">
+                        isGuardian && hasTherapistConnections === false ? (
+                            <Button disabled>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Request Appointment
-                            </Link>
-                        </Button>
+                            </Button>
+                        ) : (
+                            <Button asChild>
+                                <Link href="/appointments/create">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Request Appointment
+                                </Link>
+                            </Button>
+                        )
                     )}
                 </div>
 
@@ -185,12 +216,19 @@ export default function AppointmentsIndex({ appointments, currentUser }: Props) 
                                     {isTherapist ? 'No sessions scheduled yet' : 'Schedule your first therapy session'}
                                 </p>
                                 {(isGuardian || isChild) && (
-                                    <Button asChild>
-                                        <Link href="/appointments/create">
+                                    isGuardian && hasTherapistConnections === false ? (
+                                        <Button disabled>
                                             <Plus className="h-4 w-4 mr-2" />
                                             Request Appointment
-                                        </Link>
-                                    </Button>
+                                        </Button>
+                                    ) : (
+                                        <Button asChild>
+                                            <Link href="/appointments/create">
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Request Appointment
+                                            </Link>
+                                        </Button>
+                                    )
                                 )}
                             </div>
                         ) : (

@@ -60,10 +60,20 @@ class AppointmentController extends Controller
             ];
         });
 
-        return Inertia::render('appointments/index', [
+        $data = [
             'appointments' => $appointments,
             'currentUser' => $user->load('roles'),
-        ]);
+        ];
+
+        // For guardians, check if they have therapist connections
+        if ($user->hasRole('guardian')) {
+            $connectedTherapistIds = $this->connectionService->getClientConnections($user->id)
+                ->pluck('therapist_id')
+                ->toArray();
+            $data['hasTherapistConnections'] = count($connectedTherapistIds) > 0;
+        }
+
+        return Inertia::render('appointments/index', $data);
     }
 
     /**
