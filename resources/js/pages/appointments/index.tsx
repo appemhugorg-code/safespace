@@ -165,7 +165,7 @@ export default function AppointmentsIndex({ appointments, currentUser, hasTherap
                     {isTherapist && (
                         <div className="flex gap-2">
                             <Button variant="outline" asChild>
-                                <Link href="/therapist/availability">
+                                <Link href="/therapist/availability-slots">
                                     <Clock className="h-4 w-4 mr-2" />
                                     Manage Availability
                                 </Link>

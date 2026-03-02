@@ -379,7 +379,7 @@ export default function TherapistDashboard({ stats, upcomingAppointments, recent
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button variant="outline" asChild className="h-auto py-3 px-3 flex-col gap-2 text-xs">
-                                            <Link href="/therapist/availability">
+                                            <Link href="/therapist/availability-slots">
                                                 <Clock className="h-4 w-4" />
                                                 <span className="truncate w-full">Manage Availability</span>
                                             </Link>

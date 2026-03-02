@@ -346,7 +346,7 @@ export default function TherapistClients({ clients, stats }: Props) {
                             </Button>
 
                             <Button variant="outline" asChild>
-                                <Link href="/therapist/availability">
+                                <Link href="/therapist/availability-slots">
                                     <Calendar className="h-4 w-4 mr-2" />
                                     Manage Availability
                                 </Link>

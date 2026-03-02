@@ -1,6 +1,6 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Calendar as CalendarIcon, Clock, Plus, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 
 interface Slot {
     id: number;
@@ -25,6 +25,8 @@ interface Props {
 export default function AvailabilitySlots({ slots }: Props) {
     const { toast } = useToast();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [view, setView] = useState<'month' | 'day'>('month');
 
     const form = useForm({
         date: '',
@@ -48,8 +50,11 @@ export default function AvailabilitySlots({ slots }: Props) {
                     title: 'Success',
                     description: 'Availability slot created successfully',
                 });
-                form.reset();
-                setSelectedDate(undefined);
+                // Reload to get fresh data
+                router.visit('/therapist/availability-slots', {
+                    preserveState: false,
+                    preserveScroll: false,
+                });
             },
             onError: (errors) => {
                 toast({
@@ -82,128 +87,248 @@ export default function AvailabilitySlots({ slots }: Props) {
         return acc;
     }, {} as Record<string, Slot[]>);
 
-    return (
-        <AppLayout>
-            <Head title="Manage Availability Slots" />
+    const getMonthDays = () => {
+        const start = startOfWeek(startOfMonth(currentMonth));
+        const end = endOfWeek(endOfMonth(currentMonth));
+        return eachDayOfInterval({ start, end });
+    };
 
-            <div className="container mx-auto px-4 py-6 space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold">Manage Availability Slots</h1>
-                    <p className="text-muted-foreground">
-                        Create specific date and time slots for client appointments
-                    </p>
+    const getSlotsForDate = (date: Date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return groupedSlots[dateStr] || [];
+    };
+
+    const handleDayClick = (date: Date) => {
+        setSelectedDate(date);
+        setView('day');
+        form.setData('date', format(date, 'yyyy-MM-dd'));
+    };
+
+    const renderMonthView = () => {
+        const days = getMonthDays();
+        const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        return (
+            <div className="space-y-2">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">
+                        {format(currentMonth, 'MMMM yyyy')}
+                    </h2>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                            Today
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-7 gap-1">
+                    {weekDays.map(day => (
+                        <div key={day} className="text-center text-sm font-semibold p-2 text-muted-foreground">
+                            {day}
+                        </div>
+                    ))}
+                    {days.map((day, idx) => {
+                        const daySlots = getSlotsForDate(day);
+                        const hasBooked = daySlots.some(s => s.is_booked);
+                        const hasAvailable = daySlots.some(s => !s.is_booked);
+                        const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                        const isPast = day < new Date() && !isSameDay(day, new Date());
+
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => !isPast && handleDayClick(day)}
+                                disabled={isPast}
+                                className={`
+                                    min-h-[80px] p-2 border rounded-lg text-left transition-colors
+                                    ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
+                                    ${isPast ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-500 cursor-pointer'}
+                                    ${isSameDay(day, selectedDate || new Date()) ? 'border-blue-500 border-2' : ''}
+                                `}
+                            >
+                                <div className="text-sm font-medium mb-1">
+                                    {format(day, 'd')}
+                                </div>
+                                <div className="space-y-1">
+                                    {hasBooked && (
+                                        <div className="text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">
+                                            {daySlots.filter(s => s.is_booked).length} booked
+                                        </div>
+                                    )}
+                                    {hasAvailable && (
+                                        <div className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">
+                                            {daySlots.filter(s => !s.is_booked).length} available
+                                        </div>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
+    const renderDayView = () => {
+        if (!selectedDate) return null;
+
+        const daySlots = getSlotsForDate(selectedDate);
+
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">
+                        {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                    </h2>
+                    <Button variant="outline" size="sm" onClick={() => setView('month')}>
+                        Back to Month
+                    </Button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                     {/* Create Slot Form */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Create New Slot</CardTitle>
-                            <CardDescription>
-                                Select a date and time range for availability
-                            </CardDescription>
+                            <CardTitle>Create Slot</CardTitle>
+                            <CardDescription>Add availability for this date</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Select Date</Label>
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={handleDateSelect}
-                                        disabled={(date) => date < new Date()}
-                                        className="rounded-md border"
+                                    <Label>Start Time</Label>
+                                    <Input
+                                        type="time"
+                                        value={form.data.start_time}
+                                        onChange={(e) => form.setData('start_time', e.target.value)}
+                                        required
                                     />
                                 </div>
 
-                                {selectedDate && (
-                                    <>
-                                        <div className="space-y-2">
-                                            <Label>Start Time</Label>
-                                            <Input
-                                                type="time"
-                                                value={form.data.start_time}
-                                                onChange={(e) => form.setData('start_time', e.target.value)}
-                                                required
-                                            />
-                                        </div>
+                                <div className="space-y-2">
+                                    <Label>End Time</Label>
+                                    <Input
+                                        type="time"
+                                        value={form.data.end_time}
+                                        onChange={(e) => form.setData('end_time', e.target.value)}
+                                        required
+                                    />
+                                </div>
 
-                                        <div className="space-y-2">
-                                            <Label>End Time</Label>
-                                            <Input
-                                                type="time"
-                                                value={form.data.end_time}
-                                                onChange={(e) => form.setData('end_time', e.target.value)}
-                                                required
-                                            />
-                                        </div>
-
-                                        <Button type="submit" disabled={form.processing} className="w-full">
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Create Slot
-                                        </Button>
-                                    </>
-                                )}
+                                <Button type="submit" disabled={form.processing} className="w-full">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Slot
+                                </Button>
                             </form>
                         </CardContent>
                     </Card>
 
-                    {/* Existing Slots */}
+                    {/* Slots for this day */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Your Availability Slots</CardTitle>
-                            <CardDescription>
-                                Manage your upcoming availability
-                            </CardDescription>
+                            <CardTitle>Slots for This Day</CardTitle>
+                            <CardDescription>{daySlots.length} slot(s)</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {slots.length === 0 ? (
+                            {daySlots.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                    <p>No availability slots created yet</p>
+                                    <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                    <p>No slots for this day</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                                    {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-                                        <div key={date} className="space-y-2">
-                                            <h3 className="font-semibold text-sm">
-                                                {format(new Date(date), 'EEEE, MMMM d, yyyy')}
-                                            </h3>
-                                            {dateSlots.map((slot) => (
-                                                <div
-                                                    key={slot.id}
-                                                    className={`flex items-center justify-between p-3 border rounded-md ${
-                                                        slot.is_booked ? 'bg-gray-50' : 'bg-white'
-                                                    }`}
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                    {daySlots.map((slot) => (
+                                        <div
+                                            key={slot.id}
+                                            className={`flex items-center justify-between p-3 border rounded-md ${
+                                                slot.is_booked ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-medium">
+                                                    {slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}
+                                                </span>
+                                                <span className={`text-xs px-2 py-1 rounded ${
+                                                    slot.is_booked 
+                                                        ? 'bg-green-100 text-green-800' 
+                                                        : 'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                    {slot.is_booked ? 'Booked' : 'Available'}
+                                                </span>
+                                            </div>
+                                            {!slot.is_booked && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(slot.id)}
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-sm">
-                                                            {slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}
-                                                        </span>
-                                                        {slot.is_booked && (
-                                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                                Booked
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {!slot.is_booked && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(slot.id)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <AppLayout>
+            <Head title="Manage Availability Slots" />
+
+            <div className="container mx-auto px-4 py-6 space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold">Manage Availability Slots</h1>
+                        <p className="text-muted-foreground">
+                            Create specific date and time slots for client appointments
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant={view === 'month' ? 'default' : 'outline'}
+                            onClick={() => setView('month')}
+                        >
+                            Month View
+                        </Button>
+                        <Button
+                            variant={view === 'day' ? 'default' : 'outline'}
+                            onClick={() => {
+                                if (!selectedDate) setSelectedDate(new Date());
+                                setView('day');
+                            }}
+                        >
+                            Day View
+                        </Button>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardContent className="pt-6">
+                        {view === 'month' ? renderMonthView() : renderDayView()}
+                    </CardContent>
+                </Card>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
+                        <span>Booked Slots</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
+                        <span>Available Slots</span>
+                    </div>
                 </div>
             </div>
         </AppLayout>

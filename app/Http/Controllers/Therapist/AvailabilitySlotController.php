@@ -18,7 +18,16 @@ class AvailabilitySlotController extends Controller
             ->future()
             ->orderBy('date')
             ->orderBy('start_time')
-            ->get();
+            ->get()
+            ->map(function ($slot) {
+                return [
+                    'id' => $slot->id,
+                    'date' => $slot->date->format('Y-m-d'),
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'is_booked' => $slot->is_booked,
+                ];
+            });
 
         return Inertia::render('therapist/availability-slots', [
             'slots' => $slots,

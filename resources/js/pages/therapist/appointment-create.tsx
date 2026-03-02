@@ -298,7 +298,7 @@ export default function TherapistAppointmentCreate({ clients, therapist }: Props
                                                         You may need to set up your availability schedule first.
                                                     </p>
                                                     <Button size="sm" variant="outline" asChild>
-                                                        <Link href="/therapist/availability">
+                                                        <Link href="/therapist/availability-slots">
                                                             Set Up Availability
                                                         </Link>
                                                     </Button>
