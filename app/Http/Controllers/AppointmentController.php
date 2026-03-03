@@ -42,6 +42,8 @@ class AppointmentController extends Controller
                 'status' => $appointment->status,
                 'appointment_type' => $appointment->appointment_type,
                 'notes' => $appointment->notes,
+                'google_meet_link' => $appointment->google_meet_link,
+                'meeting_link' => $appointment->meeting_link,
                 'therapist' => $appointment->therapist ? [
                     'id' => $appointment->therapist->id,
                     'name' => $appointment->therapist->name,

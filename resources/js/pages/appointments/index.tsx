@@ -24,6 +24,8 @@ interface Appointment {
     child: User;
     guardian?: User;
     notes?: string;
+    google_meet_link?: string;
+    meeting_link?: string;
 }
 
 interface Props {
@@ -312,10 +314,12 @@ export default function AppointmentsIndex({ appointments, currentUser, hasTherap
                                                 </Link>
                                             </Button>
 
-                                            {appointment.status === 'confirmed' && (
-                                                <Button size="sm">
-                                                    <MapPin className="h-4 w-4 mr-2" />
-                                                    Join Session
+                                            {appointment.status === 'confirmed' && (appointment.google_meet_link || appointment.meeting_link) && (
+                                                <Button size="sm" asChild>
+                                                    <a href={appointment.google_meet_link || appointment.meeting_link} target="_blank" rel="noopener noreferrer">
+                                                        <MapPin className="h-4 w-4 mr-2" />
+                                                        Join Session
+                                                    </a>
                                                 </Button>
                                             )}
                                         </div>
