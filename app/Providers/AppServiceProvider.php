@@ -24,5 +24,9 @@ class AppServiceProvider extends ServiceProvider
         // Register model observers
         Group::observe(GroupObserver::class);
         \App\Models\TherapistClientConnection::observe(\App\Observers\TherapistClientConnectionObserver::class);
+
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
