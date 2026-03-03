@@ -45,15 +45,13 @@ export default function AvailabilitySlots({ slots }: Props) {
         e.preventDefault();
 
         form.post('/therapist/availability-slots', {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
+                form.reset('start_time', 'end_time');
                 toast({
                     title: 'Success',
                     description: 'Availability slot created successfully',
-                });
-                // Reload to get fresh data
-                router.visit('/therapist/availability-slots', {
-                    preserveState: false,
-                    preserveScroll: false,
                 });
             },
             onError: (errors) => {
@@ -69,6 +67,7 @@ export default function AvailabilitySlots({ slots }: Props) {
     const handleDelete = (slotId: number) => {
         if (confirm('Are you sure you want to delete this slot?')) {
             router.delete(`/therapist/availability-slots/${slotId}`, {
+                preserveState: false,
                 onSuccess: () => {
                     toast({
                         title: 'Success',

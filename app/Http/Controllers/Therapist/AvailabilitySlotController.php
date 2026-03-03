@@ -36,37 +36,64 @@ class AvailabilitySlotController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'date' => 'required|date|after:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-        ]);
+        try {
+            $request->validate([
+                'date' => 'required|date|after_or_equal:today',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time',
+            ]);
 
-        $therapist = auth()->user();
+            $therapist = auth()->user();
 
-        // Check for overlapping slots
-        $overlapping = TherapistAvailabilitySlot::where('therapist_id', $therapist->id)
-            ->forDate($request->date)
-            ->where(function ($query) use ($request) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('start_time', '<', $request->end_time)
-                      ->where('end_time', '>', $request->start_time);
+            // Check for overlapping slots
+            $overlapping = TherapistAvailabilitySlot::where('therapist_id', $therapist->id)
+                ->forDate($request->date)
+                ->where(function ($query) use ($request) {
+                    $query->where(function ($q) use ($request) {
+                        $q->where('start_time', '<', $request->end_time)
+                          ->where('end_time', '>', $request->start_time);
+                    });
+                })
+                ->exists();
+
+            if ($overlapping) {
+                return back()->withErrors(['time' => 'This time slot overlaps with an existing slot.']);
+            }
+
+            $slot = TherapistAvailabilitySlot::create([
+                'therapist_id' => $therapist->id,
+                'date' => $request->date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+            ]);
+
+            // Get all slots to return fresh data
+            $slots = TherapistAvailabilitySlot::where('therapist_id', $therapist->id)
+                ->future()
+                ->orderBy('date')
+                ->orderBy('start_time')
+                ->get()
+                ->map(function ($slot) {
+                    return [
+                        'id' => $slot->id,
+                        'date' => $slot->date->format('Y-m-d'),
+                        'start_time' => $slot->start_time,
+                        'end_time' => $slot->end_time,
+                        'is_booked' => $slot->is_booked,
+                    ];
                 });
-            })
-            ->exists();
 
-        if ($overlapping) {
-            return back()->withErrors(['time' => 'This time slot overlaps with an existing slot.']);
+            return Inertia::render('therapist/availability-slots', [
+                'slots' => $slots,
+            ])->with('success', 'Availability slot created successfully.');
+        } catch (\Exception $e) {
+            \Log::error('Slot creation error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['time' => $e->getMessage()]);
         }
-
-        TherapistAvailabilitySlot::create([
-            'therapist_id' => $therapist->id,
-            'date' => $request->date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-        ]);
-
-        return back()->with('success', 'Availability slot created successfully.');
     }
 
     public function destroy(TherapistAvailabilitySlot $slot)

@@ -402,8 +402,11 @@ class ClientConnectionController extends Controller
             $connectionHistory = $this->connectionService->getConnectionHistory($connectionId);
             $connection = $connectionHistory->first();
 
-            // Verify this guardian owns this connection
-            if ($connection->client_id !== $guardian->id) {
+            // Verify this guardian owns this connection (either as client or as guardian of the child)
+            $isGuardianConnection = $connection->client_id === $guardian->id;
+            $isChildConnection = $guardian->children()->where('id', $connection->client_id)->exists();
+            
+            if (!$isGuardianConnection && !$isChildConnection) {
                 abort(403, 'You do not have access to this connection.');
             }
 

@@ -94,16 +94,23 @@ export default function CreateAppointment({ userRole, children, therapists, pati
     const fetchAvailableDates = async () => {
         if (!form.data.therapist_id) return;
 
+        console.log('Fetching available dates for therapist:', form.data.therapist_id);
         setLoadingDates(true);
         try {
             const url = `/api/appointments/available-dates?therapist_id=${form.data.therapist_id}`;
+            console.log('API URL:', url);
             const response = await fetch(url);
 
+            console.log('Response status:', response.status);
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
                 throw new Error('Failed to fetch available dates');
             }
 
             const dates = await response.json();
+            console.log('Available dates received:', dates);
+            console.log('Number of dates:', dates.length);
             setAvailableDates(dates);
         } catch (error) {
             console.error('Error fetching available dates:', error);
@@ -215,9 +222,9 @@ export default function CreateAppointment({ userRole, children, therapists, pati
     };
 
     const getMinDate = () => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return tomorrow;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
+        return today;
     };
 
     return (
@@ -359,14 +366,18 @@ export default function CreateAppointment({ userRole, children, therapists, pati
                                             </p>
                                         </div>
                                     ) : (
-                                        <DatePicker
-                                            date={selectedDate}
-                                            onDateChange={handleDateChange}
-                                            placeholder="Select an available date"
-                                            minDate={getMinDate()}
-                                            availableDates={availableDates}
-                                            className="w-full"
-                                        />
+                                        <>
+                                            {console.log('Rendering DatePicker with availableDates:', availableDates)}
+                                            <DatePicker
+                                                key={availableDates.join(',')} // Force re-render when dates change
+                                                date={selectedDate}
+                                                onDateChange={handleDateChange}
+                                                placeholder="Select an available date"
+                                                minDate={getMinDate()}
+                                                availableDates={availableDates}
+                                                className="w-full"
+                                            />
+                                        </>
                                     )}
                                 </div>
 

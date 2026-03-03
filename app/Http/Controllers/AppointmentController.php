@@ -434,6 +434,19 @@ class AppointmentController extends Controller
                 
                 if ($user->hasRole('therapist') && $user->id == $therapistId) {
                     $hasConnection = true; // Therapist checking their own slots
+                } elseif ($user->hasRole('guardian')) {
+                    // For guardians, check if they or any of their children have a connection
+                    $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
+                    
+                    if (!$hasConnection) {
+                        // Check if any child has a connection
+                        foreach ($user->children as $child) {
+                            if ($this->connectionService->hasActiveConnection($child->id, $therapistId)) {
+                                $hasConnection = true;
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
                 }
@@ -488,6 +501,19 @@ class AppointmentController extends Controller
                 
                 if ($user->hasRole('therapist') && $user->id == $therapistId) {
                     $hasConnection = true;
+                } elseif ($user->hasRole('guardian')) {
+                    // For guardians, check if they or any of their children have a connection
+                    $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
+                    
+                    if (!$hasConnection) {
+                        // Check if any child has a connection
+                        foreach ($user->children as $child) {
+                            if ($this->connectionService->hasActiveConnection($child->id, $therapistId)) {
+                                $hasConnection = true;
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
                 }
@@ -498,7 +524,7 @@ class AppointmentController extends Controller
             }
 
             $scheduler = app(\App\Services\AppointmentScheduler::class);
-            $startDate = Carbon::tomorrow();
+            $startDate = Carbon::today(); // Start from today instead of tomorrow
             $endDate = Carbon::today()->addDays(60);
             
             $availableDates = [];

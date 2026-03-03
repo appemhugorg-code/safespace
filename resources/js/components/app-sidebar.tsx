@@ -206,11 +206,6 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'SafeSpace',
-        href: 'https://safespace.com',
-        icon: Folder,
-    },
-    {
         title: 'Help & Support',
         href: '/help',
         icon: BookOpen,

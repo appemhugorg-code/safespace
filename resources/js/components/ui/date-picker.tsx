@@ -54,15 +54,25 @@ export function DatePicker({
                     selected={date}
                     onSelect={onDateChange}
                     disabled={(date) => {
-                        if (minDate && date < minDate) return true
-                        if (maxDate && date > maxDate) return true
+                        const dateStr = format(date, 'yyyy-MM-dd')
+                        
+                        if (minDate && date < minDate) {
+                            console.log(`${dateStr}: disabled (before minDate)`)
+                            return true
+                        }
+                        if (maxDate && date > maxDate) {
+                            console.log(`${dateStr}: disabled (after maxDate)`)
+                            return true
+                        }
                         
                         // If availableDates is provided, only allow those dates
                         if (availableDates && availableDates.length > 0) {
-                            const dateStr = format(date, 'yyyy-MM-dd')
-                            return !availableDates.includes(dateStr)
+                            const isAvailable = availableDates.includes(dateStr)
+                            console.log(`${dateStr}: ${isAvailable ? 'ENABLED' : 'disabled'} (availableDates: ${JSON.stringify(availableDates)})`)
+                            return !isAvailable
                         }
                         
+                        console.log(`${dateStr}: ENABLED (no restrictions)`)
                         return false
                     }}
                     initialFocus
