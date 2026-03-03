@@ -206,31 +206,20 @@ export default function GroupConversationPage({ group, messages, currentUser }: 
                                         
                                         if (hasRole('guardian')) {
                                             // Guardians can message therapists and their children
-                                            return [
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 3, name: 'Emma Wilson', role: 'Child', status: 'away', lastMessage: 'Thanks for the help!', time: '1h', isActive: false },
-                                            ];
+                                            // Contacts are loaded from backend
+                                            return [];
                                         }
                                         
                                         if (hasRole('child')) {
                                             // Children can message therapists and their guardian
-                                            return [
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 4, name: 'Michael Brown', role: 'Guardian', status: 'offline', lastMessage: 'See you tomorrow', time: '3h', isActive: false },
-                                            ];
+                                            // Contacts are loaded from backend
+                                            return [];
                                         }
                                         
                                         if (hasRole('admin')) {
                                             // Admins can message everyone
-                                            return [
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 3, name: 'Emma Wilson', role: 'Child', status: 'away', lastMessage: 'Thanks for the help!', time: '1h', isActive: false },
-                                                { id: 4, name: 'Michael Brown', role: 'Guardian', status: 'offline', lastMessage: 'See you tomorrow', time: '3h', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 6, name: 'Alex Thompson', role: 'Child', status: 'offline', lastMessage: 'Can we talk later?', time: '45m', isActive: false },
-                                            ];
+                                            // Contacts are loaded from backend
+                                            return [];
                                         }
                                         
                                         return [];

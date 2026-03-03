@@ -62,168 +62,69 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
 
     // Real-time message listening
     useEffect(() => {
-        console.log('Echo setup check:', {
-            windowEcho: !!window.Echo,
-            contact: !!contact,
-            echoConnector: window.Echo?.connector?.name,
-            echoOptions: window.Echo?.options
-        });
+        if (!contact) return;
 
-        if (!window.Echo || !contact) {
-            console.log('Echo not available or no contact:', { echo: !!window.Echo, contact: !!contact });
-            return;
-        }
+        let userChannel: any = null;
+        let checkAttempts = 0;
+        const maxAttempts = 50; // 5 seconds max
 
-        console.log('Setting up Echo listener for user:', currentUser.id);
-        console.log('Contact:', contact.id, contact.name);
-
-        // Listen to current user's private channel for incoming messages
-        const channelName = `user.${currentUser.id}`;
-        console.log('Subscribing to channel:', channelName);
-        console.log('Current user details:', { id: currentUser.id, name: currentUser.name });
-        console.log('Contact details:', { id: contact.id, name: contact.name });
-
-        const userChannel = window.Echo.private(channelName);
-
-        // Test channel subscription
-        userChannel.subscribed(() => {
-            console.log('✅ Successfully subscribed to channel:', channelName);
-            setConnectionStatus('connected');
-        });
-
-        userChannel.error((error: any) => {
-            console.error('❌ Channel subscription error:', error);
-            setConnectionStatus('disconnected');
-        });
-
-        const handleNewMessage = (event: any) => {
-            console.log('🎯 Raw Echo event received:', {
-                eventType: 'message.sent',
-                timestamp: new Date().toISOString(),
-                messageId: event.message?.id,
-                senderId: event.message?.sender?.id,
-                recipientId: event.message?.recipient?.id,
-                channel: channelName
-            });
-            console.log('🔔 Received new message event:', event);
-            console.log('📧 Event message details:', {
-                senderId: event.message.sender.id,
-                senderName: event.message.sender.name,
-                recipientId: event.message.recipient.id,
-                content: event.message.content,
-                currentUserId: currentUser.id,
-                currentUserName: currentUser.name,
-                contactId: contact.id,
-                contactName: contact.name,
-                messageId: event.message.id
-            });
-
-            // Add message if it's part of this conversation
-            // Case 1: Message from contact to current user (incoming message)
-            // Case 2: Message from current user to contact (outgoing message - sender should see it)
-            const isFromContact = event.message.sender.id === contact.id;
-            const isFromCurrentUser = event.message.sender.id === currentUser.id;
-            const isToContact = event.message.recipient.id === contact.id;
-            const isToCurrentUser = event.message.recipient.id === currentUser.id;
-
-            console.log('🔍 Message routing check:', {
-                isFromContact,
-                isFromCurrentUser,
-                isToContact,
-                isToCurrentUser,
-                shouldAdd: (isFromContact && isToCurrentUser) || (isFromCurrentUser && isToContact),
-                messageId: event.message.id,
-                sender: { id: event.message.sender.id, name: event.message.sender.name },
-                recipient: { id: event.message.recipient.id },
-                currentUser: { id: currentUser.id, name: currentUser.name },
-                contact: { id: contact.id, name: contact.name }
-            });
-
-            // Simplified logic: Add message if it involves both the current user and the contact
-            // Convert IDs to numbers to ensure proper comparison
-            const senderId = parseInt(event.message.sender.id);
-            const recipientId = parseInt(event.message.recipient.id);
-            const currentUserId = parseInt(currentUser.id);
-            const contactId = parseInt(contact.id);
-
-            const isRelevantMessage =
-                (senderId === currentUserId && recipientId === contactId) ||
-                (senderId === contactId && recipientId === currentUserId);
-
-            console.log('📝 Relevance check:', {
-                isRelevantMessage,
-                senderId,
-                recipientId,
-                currentUserId,
-                contactId,
-                comparison1: `${senderId} === ${currentUserId} && ${recipientId} === ${contactId}`,
-                comparison2: `${senderId} === ${contactId} && ${recipientId} === ${currentUserId}`,
-                result1: senderId === currentUserId && recipientId === contactId,
-                result2: senderId === contactId && recipientId === currentUserId,
-                reason: isRelevantMessage ? 'Message involves current user and contact' : 'Message not relevant to this conversation'
-            });
-
-            if (isRelevantMessage) {
-                setLocalMessages(prev => {
-                    // Check if message already exists to prevent duplicates
-                    const messageExists = prev.some(msg => msg.id === event.message.id);
-                    console.log('Duplicate check:', {
-                        messageId: event.message.id,
-                        messageExists,
-                        existingIds: prev.map(m => m.id),
-                        willAdd: !messageExists
-                    });
-
-                    if (messageExists) {
-                        console.log('Message already exists, skipping');
-                        return prev;
-                    }
-
-                    console.log('Adding new message to conversation via Echo');
-                    return [...prev, event.message];
-                });
-                scrollToBottom();
-            } else {
-                console.log('Message filtered out - not part of this conversation');
+        // Wait for Echo to be available
+        const checkEcho = setInterval(() => {
+            checkAttempts++;
+            
+            if (window.Echo) {
+                clearInterval(checkEcho);
+                setupEchoListener();
+            } else if (checkAttempts >= maxAttempts) {
+                clearInterval(checkEcho);
+                console.warn('Echo not available after 5 seconds, real-time messaging disabled');
             }
-        };
+        }, 100);
 
-        userChannel.listen('.message.sent', handleNewMessage);
+        const setupEchoListener = () => {
+            console.log('✅ Setting up Echo listener for user:', currentUser.id);
 
-        // Add error handling for channel subscription
-        userChannel.error((error: any) => {
-            console.error('Echo channel error:', error);
-            setConnectionStatus('disconnected');
-        });
+            const channelName = `user.${currentUser.id}`;
+            userChannel = window.Echo.private(channelName);
 
-        // Connection status monitoring
-        if (window.Echo.connector?.pusher?.connection) {
-            const connection = window.Echo.connector.pusher.connection;
-
-            connection.bind('connected', () => {
-                console.log('WebSocket connected');
+            userChannel.subscribed(() => {
+                console.log('✅ Subscribed to channel:', channelName);
                 setConnectionStatus('connected');
             });
 
-            connection.bind('disconnected', () => {
-                console.log('WebSocket disconnected');
+            userChannel.error((error: any) => {
+                console.error('❌ Channel error:', error);
                 setConnectionStatus('disconnected');
             });
 
-            connection.bind('connecting', () => {
-                console.log('WebSocket reconnecting');
-                setConnectionStatus('reconnecting');
-            });
+            userChannel.listen('.message.sent', (event: any) => {
+                console.log('🔔 Message received:', event.message.id);
 
-            connection.bind('error', (error: any) => {
-                console.error('WebSocket error:', error);
-                setConnectionStatus('disconnected');
+                const senderId = parseInt(event.message.sender.id);
+                const recipientId = parseInt(event.message.recipient.id);
+                const currentUserId = parseInt(currentUser.id);
+                const contactId = parseInt(contact.id);
+
+                const isRelevantMessage =
+                    (senderId === currentUserId && recipientId === contactId) ||
+                    (senderId === contactId && recipientId === currentUserId);
+
+                if (isRelevantMessage) {
+                    setLocalMessages(prev => {
+                        if (prev.some(msg => msg.id === event.message.id)) return prev;
+                        return [...prev, event.message];
+                    });
+                    scrollToBottom();
+                }
             });
-        }
+        };
 
         return () => {
-            console.log('Cleaning up Echo listener');
-            userChannel.stopListening('.message.sent');
+            clearInterval(checkEcho);
+            if (userChannel) {
+                userChannel.stopListening('.message.sent');
+                window.Echo?.leave(`user.${currentUser.id}`);
+            }
         };
     }, [contact?.id, currentUser.id]);
 
@@ -604,34 +505,16 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
 
                                         if (hasRole('therapist')) {
                                             // Therapists can message guardians and children
-                                            contacts.push(
-                                                { id: 3, name: 'Emma Wilson', role: 'Child', status: 'away', lastMessage: 'Thanks for the help!', time: '1h', isActive: false },
-                                                { id: 4, name: 'Michael Brown', role: 'Guardian', status: 'offline', lastMessage: 'See you tomorrow', time: '3h', isActive: false },
-                                                { id: 6, name: 'Alex Thompson', role: 'Child', status: 'offline', lastMessage: 'Can we talk later?', time: '45m', isActive: false }
-                                            );
+                                            // Contacts are loaded from backend
                                         } else if (hasRole('guardian')) {
                                             // Guardians can message therapists and their children
-                                            contacts.push(
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 3, name: 'Emma Wilson', role: 'Child', status: 'away', lastMessage: 'Thanks for the help!', time: '1h', isActive: false }
-                                            );
+                                            // Contacts are loaded from backend
                                         } else if (hasRole('child')) {
                                             // Children can message therapists and their guardian
-                                            contacts.push(
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 4, name: 'Michael Brown', role: 'Guardian', status: 'offline', lastMessage: 'See you tomorrow', time: '3h', isActive: false }
-                                            );
+                                            // Contacts are loaded from backend
                                         } else if (hasRole('admin')) {
                                             // Admins can message everyone
-                                            contacts.push(
-                                                { id: 2, name: 'Dr. Sarah Johnson', role: 'Therapist', status: 'online', lastMessage: 'How are you feeling today?', time: '2m', isActive: false },
-                                                { id: 3, name: 'Emma Wilson', role: 'Child', status: 'away', lastMessage: 'Thanks for the help!', time: '1h', isActive: false },
-                                                { id: 4, name: 'Michael Brown', role: 'Guardian', status: 'offline', lastMessage: 'See you tomorrow', time: '3h', isActive: false },
-                                                { id: 5, name: 'Dr. Lisa Chen', role: 'Therapist', status: 'away', lastMessage: 'Your progress is great!', time: '30m', isActive: false },
-                                                { id: 6, name: 'Alex Thompson', role: 'Child', status: 'offline', lastMessage: 'Can we talk later?', time: '45m', isActive: false }
-                                            );
+                                            // Contacts are loaded from backend
                                         }
 
                                         // Remove duplicates and filter out current contact from non-active items

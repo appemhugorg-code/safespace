@@ -70,9 +70,9 @@ export interface ThemeConfig {
   };
 }
 
-// Default theme configuration
+// Default theme configuration - locked to light mode
 const defaultTheme: ThemeConfig = {
-  mode: 'auto',
+  mode: 'light',
   colors: {
     primary: {
       50: '#EFF6FF',
@@ -327,9 +327,8 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Calculate effective theme mode
-  const effectiveMode: 'light' | 'dark' = 
-    theme.mode === 'auto' ? (isSystemDark ? 'dark' : 'light') : theme.mode;
+  // Calculate effective theme mode - always light
+  const effectiveMode: 'light' | 'dark' = 'light';
 
   // Apply theme to document
   useEffect(() => {

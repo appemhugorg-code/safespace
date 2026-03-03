@@ -1,6 +1,5 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { ThemeToggle } from '@/components/theme/theme-configurator';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import NotificationBell from '@/components/notification-bell';
 
@@ -16,7 +15,6 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2">
-                <ThemeToggle />
                 <NotificationBell />
             </div>
         </header>
