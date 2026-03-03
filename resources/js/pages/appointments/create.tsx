@@ -64,13 +64,30 @@ export default function CreateAppointment({ children, therapists }: Props) {
     };
 
     const fetchAvailableSlots = async () => {
+        console.log('Fetching slots for:', { therapist_id: data.therapist_id, date: data.date });
         setLoadingSlots(true);
         try {
-            const response = await fetch(`/api/appointments/available-slots?therapist_id=${data.therapist_id}&date=${data.date}`);
-            const slots = await response.json();
+            const url = `/api/appointments/available-slots?therapist_id=${data.therapist_id}&date=${data.date}`;
+            console.log('API URL:', url);
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+            const result = await response.json();
+            console.log('API result:', result);
+            
+            // Handle error responses
+            if (!response.ok || result.error) {
+                console.error('API error:', result);
+                setAvailableSlots([]);
+                return;
+            }
+            
+            // Ensure result is an array
+            const slots = Array.isArray(result) ? result : [];
+            console.log('Setting slots:', slots);
             setAvailableSlots(slots);
         } catch (error) {
             console.error('Failed to fetch available slots:', error);
+            setAvailableSlots([]);
         } finally {
             setLoadingSlots(false);
         }

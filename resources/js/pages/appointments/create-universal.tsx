@@ -128,7 +128,12 @@ export default function CreateAppointment({ userRole, children, therapists, pati
     const fetchAvailableSlots = async () => {
         if (!selectedDate || !form.data.therapist_id) return;
 
-        const dateString = selectedDate.toISOString().split('T')[0];
+        // Format date in local timezone to avoid UTC conversion issues
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
         console.log('Fetching slots for:', {
             date: dateString,
             therapistId: form.data.therapist_id,
@@ -177,7 +182,11 @@ export default function CreateAppointment({ userRole, children, therapists, pati
     const handleTimeSlotSelect = (slot: AvailableSlot) => {
         // Combine the selected date with the time slot and set duration from slot
         if (selectedDate) {
-            const dateString = selectedDate.toISOString().split('T')[0];
+            // Format date in local timezone to avoid UTC conversion issues
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
             const scheduledAt = `${dateString} ${slot.time}`;
             form.setData({
                 ...form.data,
