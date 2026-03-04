@@ -28,6 +28,7 @@ class AppointmentController extends Controller
      */
     public function index()
     {
+        die("Hello");
         $user = auth()->user();
 
         // Use permission service to get accessible appointments
@@ -87,12 +88,12 @@ class AppointmentController extends Controller
 
         if ($user->hasRole('guardian')) {
             $children = $user->children()->where('status', 'active')->get();
-            
+
             // Only show therapists that the guardian has active connections with
             $connectedTherapistIds = $this->connectionService->getClientConnections($user->id)
                 ->pluck('therapist_id')
                 ->toArray();
-            
+
             $therapists = User::role('therapist')
                 ->where('status', 'active')
                 ->whereIn('id', $connectedTherapistIds)
@@ -110,7 +111,7 @@ class AppointmentController extends Controller
             $connectedChildIds = $this->connectionService->getTherapistChildConnections($user->id)
                 ->pluck('client_id')
                 ->toArray();
-            
+
             $patients = User::role('child')
                 ->where('status', 'active')
                 ->whereIn('id', $connectedChildIds)
@@ -128,7 +129,7 @@ class AppointmentController extends Controller
             $connectedTherapistIds = $this->connectionService->getClientConnections($user->id)
                 ->pluck('therapist_id')
                 ->toArray();
-            
+
             $therapists = User::role('therapist')
                 ->where('status', 'active')
                 ->whereIn('id', $connectedTherapistIds)
@@ -319,7 +320,7 @@ class AppointmentController extends Controller
         try {
             $googleMeetService = app(\App\Services\GoogleMeetService::class);
             $success = $googleMeetService->createTherapySession($appointment);
-            
+
             // If Google Meet creation failed, create a placeholder link
             if (!$success || !$appointment->google_meet_link) {
                 $appointment->update([
@@ -332,7 +333,7 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             // Log error and create fallback meeting link
             \Log::error('Failed to create meeting link or send emails: ' . $e->getMessage());
-            
+
             // Create a placeholder meeting link so appointment can still proceed
             if (!$appointment->meeting_link && !$appointment->google_meet_link) {
                 $appointment->update([
@@ -433,13 +434,13 @@ class AppointmentController extends Controller
             // Validate that the user has an active connection with the therapist
             if (!$user->hasRole('admin')) {
                 $hasConnection = false;
-                
+
                 if ($user->hasRole('therapist') && $user->id == $therapistId) {
                     $hasConnection = true; // Therapist checking their own slots
                 } elseif ($user->hasRole('guardian')) {
                     // For guardians, check if they or any of their children have a connection
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
-                    
+
                     if (!$hasConnection) {
                         // Check if any child has a connection
                         foreach ($user->children as $child) {
@@ -452,7 +453,7 @@ class AppointmentController extends Controller
                 } else {
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
                 }
-                
+
                 if (!$hasConnection) {
                     return response()->json(['error' => 'You do not have an active connection with this therapist'], 403);
                 }
@@ -500,13 +501,13 @@ class AppointmentController extends Controller
             // Validate connection
             if (!$user->hasRole('admin')) {
                 $hasConnection = false;
-                
+
                 if ($user->hasRole('therapist') && $user->id == $therapistId) {
                     $hasConnection = true;
                 } elseif ($user->hasRole('guardian')) {
                     // For guardians, check if they or any of their children have a connection
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
-                    
+
                     if (!$hasConnection) {
                         // Check if any child has a connection
                         foreach ($user->children as $child) {
@@ -519,7 +520,7 @@ class AppointmentController extends Controller
                 } else {
                     $hasConnection = $this->connectionService->hasActiveConnection($user->id, $therapistId);
                 }
-                
+
                 if (!$hasConnection) {
                     return response()->json(['error' => 'You do not have an active connection with this therapist'], 403);
                 }
@@ -528,10 +529,10 @@ class AppointmentController extends Controller
             $scheduler = app(\App\Services\AppointmentScheduler::class);
             $startDate = Carbon::today(); // Start from today instead of tomorrow
             $endDate = Carbon::today()->addDays(60);
-            
+
             $availableDates = [];
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate->lte($endDate)) {
                 $slots = $scheduler->getAvailableSlots($therapistId, $currentDate);
                 if ($slots->isNotEmpty()) {
