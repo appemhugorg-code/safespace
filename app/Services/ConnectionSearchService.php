@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\TherapistAvailability;
 use App\Models\TherapistClientConnection;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 
 class ConnectionSearchService
@@ -223,14 +224,8 @@ class ConnectionSearchService
             })
             ->count();
 
-        $averageConnections = TherapistClientConnection::where('status', 'active')
+        $averageConnections = DB::table(DB::raw('(select therapist_id, COUNT(*) as connections_count from therapist_client_connections where status = \'active\' group by therapist_id) as connection_counts'))
             ->selectRaw('AVG(connections_count) as avg_connections')
-            ->from(function ($query) {
-                $query->selectRaw('therapist_id, COUNT(*) as connections_count')
-                    ->from('therapist_client_connections')
-                    ->where('status', 'active')
-                    ->groupBy('therapist_id');
-            }, 'connection_counts')
             ->value('avg_connections') ?? 0;
 
         return [
