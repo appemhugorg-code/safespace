@@ -21,6 +21,7 @@ class PanicAlertController extends Controller
      */
     public function index()
     {
+        die("Hello");
         $user = auth()->user();
         $panicAlerts = $this->panicAlertService->getPanicAlertsForUser($user);
         $unviewedCount = $this->panicAlertService->getUnviewedAlertsCount($user);

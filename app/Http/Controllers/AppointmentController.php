@@ -29,6 +29,7 @@ class AppointmentController extends Controller
     public function index()
     {
         die("Hello");
+
         $user = auth()->user();
 
         // Use permission service to get accessible appointments
