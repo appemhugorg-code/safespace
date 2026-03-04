@@ -61,6 +61,7 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
         // Availability slots (new date-specific system)
         Route::get('/availability-slots', [\App\Http\Controllers\Therapist\AvailabilitySlotController::class, 'index'])->name('availability-slots.index');
         Route::post('/availability-slots', [\App\Http\Controllers\Therapist\AvailabilitySlotController::class, 'store'])->name('availability-slots.store');
+        Route::put('/availability-slots/{slot}', [\App\Http\Controllers\Therapist\AvailabilitySlotController::class, 'update'])->name('availability-slots.update');
         Route::delete('/availability-slots/{slot}', [\App\Http\Controllers\Therapist\AvailabilitySlotController::class, 'destroy'])->name('availability-slots.destroy');
         
         Route::get('/consultation/create', [\App\Http\Controllers\Therapist\ConsultationController::class, 'create'])->name('consultation.create');

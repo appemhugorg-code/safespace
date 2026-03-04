@@ -112,4 +112,45 @@ class AvailabilitySlotController extends Controller
 
         return back()->with('success', 'Availability slot deleted successfully.');
     }
+
+    public function update(Request $request, TherapistAvailabilitySlot $slot)
+    {
+        $therapist = auth()->user();
+
+        if ($slot->therapist_id !== $therapist->id) {
+            abort(403);
+        }
+
+        if ($slot->is_booked) {
+            return back()->withErrors(['slot' => 'Cannot edit a booked slot.']);
+        }
+
+        $request->validate([
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ]);
+
+        // Check for overlapping slots (excluding current slot)
+        $overlapping = TherapistAvailabilitySlot::where('therapist_id', $therapist->id)
+            ->where('id', '!=', $slot->id)
+            ->forDate($slot->date)
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('start_time', '<', $request->end_time)
+                      ->where('end_time', '>', $request->start_time);
+                });
+            })
+            ->exists();
+
+        if ($overlapping) {
+            return back()->withErrors(['time' => 'This time slot overlaps with an existing slot.']);
+        }
+
+        $slot->update([
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+        ]);
+
+        return back()->with('success', 'Availability slot updated successfully.');
+    }
 }

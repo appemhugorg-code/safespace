@@ -1,12 +1,13 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Calendar as CalendarIcon, Clock, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, Trash2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 
@@ -27,9 +28,15 @@ export default function AvailabilitySlots({ slots }: Props) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [view, setView] = useState<'month' | 'day'>('month');
+    const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
 
     const form = useForm({
         date: '',
+        start_time: '',
+        end_time: '',
+    });
+
+    const editForm = useForm({
         start_time: '',
         end_time: '',
     });
@@ -76,6 +83,42 @@ export default function AvailabilitySlots({ slots }: Props) {
                 },
             });
         }
+    };
+
+    const handleEdit = (slot: Slot) => {
+        setEditingSlot(slot);
+        editForm.setData({
+            start_time: slot.start_time.substring(0, 5),
+            end_time: slot.end_time.substring(0, 5),
+        });
+    };
+
+    const handleUpdate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingSlot) return;
+
+        const slotDate = new Date(editingSlot.date);
+
+        editForm.put(`/therapist/availability-slots/${editingSlot.id}`, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setSelectedDate(slotDate);
+                setView('day');
+                setEditingSlot(null);
+                toast({
+                    title: 'Success',
+                    description: 'Slot updated successfully',
+                });
+            },
+            onError: () => {
+                toast({
+                    title: 'Error',
+                    description: 'Failed to update slot',
+                    variant: 'destructive',
+                });
+            },
+        });
     };
 
     const groupedSlots = slots.reduce((acc, slot) => {
@@ -262,13 +305,22 @@ export default function AvailabilitySlots({ slots }: Props) {
                                                 </span>
                                             </div>
                                             {!slot.is_booked && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(slot.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleEdit(slot)}
+                                                    >
+                                                        <Edit2 className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(slot.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </div>
                                             )}
                                         </div>
                                     ))}
@@ -329,6 +381,48 @@ export default function AvailabilitySlots({ slots }: Props) {
                         <span>Available Slots</span>
                     </div>
                 </div>
+
+                {/* Edit Slot Dialog */}
+                <Dialog open={!!editingSlot} onOpenChange={() => setEditingSlot(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Edit Availability Slot</DialogTitle>
+                            <DialogDescription>
+                                Update the time for this slot
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleUpdate}>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Start Time</Label>
+                                    <Input
+                                        type="time"
+                                        value={editForm.data.start_time}
+                                        onChange={(e) => editForm.setData('start_time', e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>End Time</Label>
+                                    <Input
+                                        type="time"
+                                        value={editForm.data.end_time}
+                                        onChange={(e) => editForm.setData('end_time', e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setEditingSlot(null)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={editForm.processing}>
+                                    Update Slot
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );
