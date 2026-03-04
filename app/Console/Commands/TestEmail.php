@@ -7,22 +7,30 @@ use Illuminate\Support\Facades\Mail;
 
 class TestEmail extends Command
 {
-    protected $signature = 'mail:test {email}';
-    protected $description = 'Test email configuration';
+    protected $signature = 'email:test {recipient}';
+    protected $description = 'Test email configuration by sending a test email';
 
     public function handle()
     {
-        $email = $this->argument('email');
+        $recipient = $this->argument('recipient');
+        
+        $this->info("Attempting to send test email to: {$recipient}");
         
         try {
-            Mail::raw('This is a test email from SafeSpace!', function ($message) use ($email) {
-                $message->to($email)
-                    ->subject('SafeSpace Email Test');
+            Mail::raw('This is a test email from SafeSpace. If you received this, email is working correctly.', function ($message) use ($recipient) {
+                $message->to($recipient)
+                    ->subject('SafeSpace Email Test - ' . now()->format('Y-m-d H:i:s'));
             });
             
-            $this->info("✅ Test email sent successfully to {$email}");
+            $this->info('✓ Email sent successfully!');
+            $this->info('Check your inbox (and spam folder) at: ' . $recipient);
+            
+            return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->error("❌ Failed to send email: " . $e->getMessage());
+            $this->error('✗ Failed to send email');
+            $this->error('Error: ' . $e->getMessage());
+            
+            return Command::FAILURE;
         }
     }
 }
