@@ -43,7 +43,7 @@ class TestWelcomeEmailCommand extends Command
             // Assign a test role
             $testUser->id = 999999; // Fake ID for URL generation
 
-            $emailService = new EmailNotificationService();
+            $emailService = app(EmailNotificationService::class);
             $emailService->sendWelcomeEmail($testUser);
 
             $this->info("✅ Welcome email sent successfully!");
