@@ -11,6 +11,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { v2 as appointmentsV2 } from '@/routes/appointments';
 import { type NavItem, type User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid, Users, Settings, Calendar, MessageCircle, Heart, Shield, AlertTriangle, UserCheck } from 'lucide-react';
@@ -99,6 +100,11 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
                 icon: Calendar,
             },
             {
+                title: 'Appointments V2',
+                href: appointmentsV2.url(),
+                icon: Calendar,
+            },
+            {
                 title: 'Messages',
                 href: '/messages',
                 icon: MessageCircle,
@@ -152,6 +158,11 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
                 icon: Calendar,
             },
             {
+                title: 'Appointments V2',
+                href: appointmentsV2.url(),
+                icon: Calendar,
+            },
+            {
                 title: 'Messages',
                 href: '/messages',
                 icon: MessageCircle,
@@ -176,6 +187,11 @@ const getNavItemsForUser = (user: User, unviewedCount: number): NavItem[] => {
             {
                 title: 'Appointments',
                 href: '/appointments',
+                icon: Calendar,
+            },
+            {
+                title: 'Appointments V2',
+                href: appointmentsV2.url(),
                 icon: Calendar,
             },
             {

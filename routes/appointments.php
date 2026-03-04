@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified' until domain is set up
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
+    Route::get('/appointments-v2', [AppointmentController::class, 'index'])->name('appointments.v2');
     Route::get('/appointments/create', [AppointmentController::class, 'create'])->name('appointments.create');
     Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
     Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show');
