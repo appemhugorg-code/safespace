@@ -61,7 +61,7 @@ setTimeout(() => {
 
             // Configure Echo for Reverb
             window.Pusher = Pusher;
-            
+
             configureEcho({
                 broadcaster: 'reverb',
             });
@@ -87,6 +87,9 @@ setTimeout(() => {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     },
                 },
+                // Add heartbeat settings
+                pongTimeout: 10000,
+                pingInterval: 30000, // Sends a ping every 30 seconds
             });
 
             // Add connection event listeners for debugging
