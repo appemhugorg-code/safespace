@@ -306,7 +306,7 @@ class Appointment extends Model
                 $q->whereBetween('scheduled_at', [$scheduledAt, $endTime])
                     ->orWhere(function ($q2) use ($scheduledAt) {
                         $q2->where('scheduled_at', '<=', $scheduledAt)
-                            ->whereRaw('datetime(scheduled_at, "+" || duration_minutes || " minutes") > ?', [$scheduledAt]);
+                            ->whereRaw("scheduled_at + (duration_minutes || ' minutes')::interval > ?", [$scheduledAt]);
                     });
             });
 
