@@ -5,6 +5,7 @@ import { Shield, Users, MessageCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLogoIcon from '@/components/app-logo-icon';
 
 export default function Welcome() {
     const { auth } = usePage<SharedData>().props;
@@ -21,6 +22,9 @@ export default function Welcome() {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-4">
                             <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600">
+                                    <AppLogoIcon className="w-6 h-6 text-white" />
+                                </div>
                                 <span className="text-2xl font-bold text-blue-900">SafeSpace</span>
                             </div>
 
@@ -314,7 +318,7 @@ export default function Welcome() {
                             </div>
 
                             <div className="flex items-center gap-6 text-sm text-gray-400">
-                                <span>© 2024 SafeSpace. All rights reserved.</span>
+                                <span>© 2026 SafeSpace. All rights reserved.</span>
                                 <span>•</span>
                                 <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                                 <span>•</span>
@@ -325,7 +329,7 @@ export default function Welcome() {
                         <div className="mt-8 pt-8 border-t border-gray-800 text-center">
                             <p className="text-gray-400 text-sm">
                                 <strong className="text-red-400">Crisis Support:</strong> If you or someone you know is in immediate danger,
-                                please call 911 or contact the National Suicide Prevention Lifeline at 988.
+                                please call 999 or contact the National Crisis Helpline at 999.
                             </p>
                         </div>
                     </div>
