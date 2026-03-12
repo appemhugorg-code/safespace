@@ -15,9 +15,9 @@ class MessageSent implements ShouldBroadcast
 
     /**
      * The name of the queue connection to use when broadcasting the event.
-     * Set to 'sync' for immediate broadcasting without queuing
+     * Using default queue connection for better reliability with rapid messages
      */
-    public $connection = 'sync';
+    // public $connection = 'sync'; // Removed - causes issues with rapid successive messages
 
     public $message;
 

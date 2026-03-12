@@ -82,14 +82,16 @@ setTimeout(() => {
                 forceTLS: reverbScheme === 'https',
                 enabledTransports: ['ws', 'wss'],
                 disableStats: true,
+                authEndpoint: '/broadcasting/auth',
                 auth: {
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
                     },
                 },
-                // Add heartbeat settings
-                pongTimeout: 10000,
-                pingInterval: 30000, // Sends a ping every 30 seconds
+                activityTimeout: 120000,
+                pongTimeout: 30000,
+                unavailableTimeout: 10000,
             });
 
             // Add connection event listeners for debugging

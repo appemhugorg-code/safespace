@@ -162,6 +162,12 @@ class ConnectionPermissionService
             if ($this->isFamilyRelationship($user, $otherUser)) {
                 return $this->canAccessFamilyFeature($feature);
             }
+            
+            // Allow guardian-therapist messaging if therapist has connection with guardian's child
+            if ($feature === 'messaging' && $this->hasIndirectConnection($user, $otherUser)) {
+                return true;
+            }
+            
             return false;
         }
 
@@ -193,6 +199,31 @@ class ConnectionPermissionService
         
         if ($user->hasRole('child') && $otherUser->hasRole('guardian')) {
             return $user->guardian_id === $otherUser->id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if users have an indirect connection (e.g., guardian-therapist through child)
+     */
+    protected function hasIndirectConnection(User $user, User $otherUser): bool
+    {
+        // Guardian-Therapist connection through child
+        if ($user->hasRole('guardian') && $otherUser->hasRole('therapist')) {
+            $children = User::where('guardian_id', $user->id)->pluck('id');
+            return TherapistClientConnection::where('therapist_id', $otherUser->id)
+                ->whereIn('client_id', $children)
+                ->where('status', 'active')
+                ->exists();
+        }
+        
+        if ($user->hasRole('therapist') && $otherUser->hasRole('guardian')) {
+            $children = User::where('guardian_id', $otherUser->id)->pluck('id');
+            return TherapistClientConnection::where('therapist_id', $user->id)
+                ->whereIn('client_id', $children)
+                ->where('status', 'active')
+                ->exists();
         }
 
         return false;

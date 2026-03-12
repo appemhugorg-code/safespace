@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, MoreVertical, AlertTriangle, Wifi, WifiOff, Users } from 'lucide-react';
+import { ArrowLeft, Send, MoreVertical, AlertTriangle, Wifi, WifiOff, Users, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import AppLayout from '@/layouts/app-layout';
+import { useWebSocketConnection } from '@/hooks/use-websocket-connection';
 
 interface User {
     id: number;
@@ -39,18 +40,20 @@ interface Props {
 
 export default function Conversation({ contact, messages, currentUser }: Props) {
     const [localMessages, setLocalMessages] = useState<Message[]>(messages);
-    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
-        content: '',
-        recipient_id: contact.id,
-    });
-
+    const [messageContent, setMessageContent] = useState('');
     const [sendError, setSendError] = useState<string | null>(null);
     const [sendSuccess, setSendSuccess] = useState(false);
-    const [sendWarning, setSendWarning] = useState<string | null>(null);
+    const [isSending, setIsSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const { status: connectionStatus, reconnectAttempt, maxReconnectAttempts, forceReconnect } = useWebSocketConnection({
+        maxReconnectAttempts: 10,
+        reconnectInterval: 1000,
+        onConnected: () => console.log('✅ Chat connected'),
+        onDisconnected: () => console.log('❌ Chat disconnected'),
+        onReconnecting: (attempt) => console.log(`🔄 Reconnecting... (${attempt})`)
+    });
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,147 +65,84 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
 
     // Real-time message listening
     useEffect(() => {
-        if (!contact) return;
+        if (!contact || !window.Echo) return;
 
-        let userChannel: any = null;
-        let checkAttempts = 0;
-        const maxAttempts = 50; // 5 seconds max
+        const channelName = `user.${currentUser.id}`;
+        console.log('🔌 Subscribing to channel:', channelName);
+        
+        const userChannel = window.Echo.private(channelName);
 
-        // Wait for Echo to be available
-        const checkEcho = setInterval(() => {
-            checkAttempts++;
-            
-            if (window.Echo) {
-                clearInterval(checkEcho);
-                setupEchoListener();
-            } else if (checkAttempts >= maxAttempts) {
-                clearInterval(checkEcho);
-                console.warn('Echo not available after 5 seconds, real-time messaging disabled');
-            }
-        }, 100);
+        userChannel.subscribed(() => {
+            console.log('✅ Subscribed to channel:', channelName);
+        });
+        
+        userChannel.error((error: any) => {
+            console.error('❌ Channel subscription error:', error);
+        });
 
-        const setupEchoListener = () => {
-            console.log('✅ Setting up Echo listener for user:', currentUser.id);
+        userChannel.listen('.message.sent', (event: any) => {
+            console.log('🔔 Message received:', event.message.id);
 
-            const channelName = `user.${currentUser.id}`;
-            userChannel = window.Echo.private(channelName);
+            const senderId = parseInt(event.message.sender.id);
+            const recipientId = parseInt(event.message.recipient.id);
+            const currentUserId = parseInt(currentUser.id);
+            const contactId = parseInt(contact.id);
 
-            userChannel.subscribed(() => {
-                console.log('✅ Subscribed to channel:', channelName);
-                setConnectionStatus('connected');
-            });
+            const isRelevantMessage =
+                (senderId === currentUserId && recipientId === contactId) ||
+                (senderId === contactId && recipientId === currentUserId);
 
-            userChannel.error((error: any) => {
-                console.error('❌ Channel error:', error);
-                setConnectionStatus('disconnected');
-            });
-
-            userChannel.listen('.message.sent', (event: any) => {
-                console.log('🔔 Message received:', event.message.id);
-
-                const senderId = parseInt(event.message.sender.id);
-                const recipientId = parseInt(event.message.recipient.id);
-                const currentUserId = parseInt(currentUser.id);
-                const contactId = parseInt(contact.id);
-
-                const isRelevantMessage =
-                    (senderId === currentUserId && recipientId === contactId) ||
-                    (senderId === contactId && recipientId === currentUserId);
-
-                if (isRelevantMessage) {
-                    setLocalMessages(prev => {
-                        if (prev.some(msg => msg.id === event.message.id)) return prev;
-                        return [...prev, event.message];
-                    });
-                    scrollToBottom();
-                }
-            });
-        };
-
-        return () => {
-            clearInterval(checkEcho);
-            if (userChannel) {
-                userChannel.stopListening('.message.sent');
-                window.Echo?.leave(`user.${currentUser.id}`);
-            }
-        };
-    }, [contact?.id, currentUser.id]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!data.content.trim() || processing) return;
-
-        // Clear previous messages
-        setSendError(null);
-        setSendSuccess(false);
-        setSendWarning(null);
-        clearErrors();
-
-        console.log('Sending message:', data.content, 'to:', contact.id);
-        console.log('Form data:', data);
-
-        post('/messages', {
-            preserveScroll: true,
-            onSuccess: (response: any) => {
-                console.log('Message response:', response);
-
-                // Re-enable optimistic updates for testing
-                // Add the message optimistically to show immediate feedback
-                const sentMessage = response.props?.message || response.props?.flash?.message;
-                if (sentMessage) {
-                    console.log('✨ Optimistic update - adding message:', sentMessage.id);
-                    setLocalMessages(prev => {
-                        // Check if message already exists to prevent duplicates
-                        const messageExists = prev.some(msg => msg.id === sentMessage.id);
-                        if (!messageExists) {
-                            console.log('Adding sent message optimistically');
-                            return [...prev, sentMessage];
-                        }
-                        console.log('Optimistic message already exists, skipping');
-                        return prev;
-                    });
-                    scrollToBottom();
-                }
-
-                reset('content');
-
-                // Check if there's a warning (broadcast failed)
-                if (response.props?.flash?.warning) {
-                    setSendWarning(response.props.flash.warning);
-                    setTimeout(() => setSendWarning(null), 8000);
-                } else {
-                    setSendSuccess(true);
-                    setTimeout(() => setSendSuccess(false), 2000);
-                }
-
-                // If real-time is down, reload to show the message
-                if (connectionStatus === 'disconnected' || response.props?.errors?.broadcast) {
-                    setTimeout(() => {
-                        router.reload({ only: ['messages'] });
-                    }, 1000);
-                }
-            },
-            onError: (errors) => {
-                console.error('Failed to send message:', errors);
-
-                // Check for specific broadcast errors
-                if (errors.broadcast) {
-                    setSendWarning('Message saved but real-time delivery failed. Refreshing to show your message...');
-                    setTimeout(() => {
-                        router.reload({ only: ['messages'] });
-                    }, 2000);
-                } else {
-                    setSendError('Failed to send message. Please try again.');
-                }
-
-                // Clear messages after 5 seconds
-                setTimeout(() => {
-                    setSendError(null);
-                    setSendWarning(null);
-                }, 5000);
+            if (isRelevantMessage) {
+                setLocalMessages(prev => {
+                    if (prev.some(msg => msg.id === event.message.id)) return prev;
+                    return [...prev, event.message];
+                });
+                scrollToBottom();
             }
         });
+
+        return () => {
+            console.log('🔌 Unsubscribing from channel:', channelName);
+            userChannel.stopListening('.message.sent');
+            window.Echo?.leave(channelName);
+        };
+    }, [contact?.id, currentUser.id, connectionStatus]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!messageContent.trim() || isSending) return;
+
+        setSendError(null);
+        setSendSuccess(false);
+        setIsSending(true);
+
+        try {
+            const response = await fetch('/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    recipient_id: contact.id,
+                    content: messageContent,
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to send');
+
+            setMessageContent('');
+            setSendSuccess(true);
+            setTimeout(() => setSendSuccess(false), 2000);
+        } catch (error) {
+            console.error('Send error:', error);
+            setSendError('Failed to send message');
+            setTimeout(() => setSendError(null), 5000);
+        } finally {
+            setIsSending(false);
+        }
     };
 
     const reportMessage = (messageId: number) => {
@@ -236,6 +176,44 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
             <Head title={`Chat with ${contact.name}`} />
 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden h-screen flex flex-col">
+                {/* Connection Status Banner */}
+                {connectionStatus !== 'connected' && (
+                    <div className={`flex-shrink-0 p-3 rounded-lg flex items-center justify-between ${
+                        connectionStatus === 'reconnecting' 
+                            ? 'bg-yellow-50 border border-yellow-200' 
+                            : 'bg-red-50 border border-red-200'
+                    }`}>
+                        <div className="flex items-center gap-2">
+                            {connectionStatus === 'reconnecting' ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 text-yellow-600 animate-spin" />
+                                    <span className="text-sm text-yellow-800">
+                                        Reconnecting to chat server... (Attempt {reconnectAttempt}/{maxReconnectAttempts})
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <WifiOff className="w-4 h-4 text-red-600" />
+                                    <span className="text-sm text-red-800">
+                                        Connection lost. Messages may not be delivered.
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        {connectionStatus === 'disconnected' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={forceReconnect}
+                                className="h-8"
+                            >
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                Retry Now
+                            </Button>
+                        )}
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex-shrink-0">
                     <Link href="/messages">
@@ -281,33 +259,30 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
                                         </div>
                                     )}
                                     {connectionStatus === 'disconnected' && (
-                                        <div className="flex items-center gap-1 text-red-600">
-                                            <WifiOff className="w-4 h-4" />
-                                            <span className="text-xs">Disconnected</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 text-red-600">
+                                                <WifiOff className="w-4 h-4" />
+                                                <span className="text-xs">Disconnected</span>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={forceReconnect}
+                                                className="h-7 px-2"
+                                            >
+                                                <RefreshCw className="w-3 h-3 mr-1" />
+                                                Reconnect
+                                            </Button>
                                         </div>
                                     )}
                                     {connectionStatus === 'reconnecting' && (
                                         <div className="flex items-center gap-1 text-yellow-600">
                                             <Wifi className="w-4 h-4 animate-pulse" />
-                                            <span className="text-xs">Reconnecting...</span>
+                                            <span className="text-xs">
+                                                Reconnecting... ({reconnectAttempt}/{maxReconnectAttempts})
+                                            </span>
                                         </div>
                                     )}
-
-                                    {/* Debug Info */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            console.log('Debug Info:');
-                                            console.log('Current User:', currentUser);
-                                            console.log('Contact:', contact);
-                                            console.log('Messages:', localMessages);
-                                            console.log('Echo available:', !!window.Echo);
-                                            console.log('Connection Status:', connectionStatus);
-                                        }}
-                                    >
-                                        Debug
-                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -388,41 +363,26 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
                         <div className="border-t p-4">
                             <form onSubmit={handleSubmit} className="flex gap-2">
                                 <Input
-                                    value={data.content}
+                                    value={messageContent}
                                     onChange={(e) => {
-                                        setData('content', e.target.value);
-                                        // Clear messages when user starts typing
+                                        setMessageContent(e.target.value);
                                         if (sendError) setSendError(null);
-                                        if (sendWarning) setSendWarning(null);
                                     }}
                                     placeholder={connectionStatus === 'connected' ? "Type your message..." : "Connecting..."}
                                     className="flex-1"
-                                    disabled={processing || connectionStatus === 'disconnected'}
+                                    disabled={isSending || connectionStatus === 'disconnected'}
                                     maxLength={1000}
                                 />
                                 <Button
                                     type="submit"
-                                    disabled={processing || !data.content.trim() || connectionStatus === 'disconnected'}
+                                    disabled={isSending || !messageContent.trim() || connectionStatus === 'disconnected'}
                                     className="relative"
                                 >
-                                    {processing ? (
+                                    {isSending ? (
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     ) : (
                                         <Send className="w-4 h-4" />
                                     )}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setData('content', 'Test message from debug button');
-                                        setTimeout(() => {
-                                            handleSubmit(new Event('submit') as any);
-                                        }, 100);
-                                    }}
-                                    disabled={processing}
-                                >
-                                    Test
                                 </Button>
                             </form>
 
@@ -440,34 +400,13 @@ export default function Conversation({ contact, messages, currentUser }: Props) 
                                 </div>
                             )}
 
-                            {/* Warning Message */}
-                            {sendWarning && (
-                                <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
-                                    ⚠️ {sendWarning}
-                                </div>
-                            )}
-
-                            {/* Form Errors */}
-                            {errors.content && (
-                                <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                                    {errors.content}
-                                </div>
-                            )}
-
-                            {/* Connection Status Warning */}
-                            {connectionStatus === 'disconnected' && (
-                                <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
-                                    ⚠️ Connection lost. Messages will be sent when connection is restored.
-                                </div>
-                            )}
-
                             {/* Character Count */}
                             <div className="flex items-center justify-between mt-3">
                                 <div className="text-xs text-muted-foreground">
                                     💡 All messages are monitored for safety. Be respectful and kind.
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                    {data.content.length}/1000
+                                    {messageContent.length}/1000
                                 </div>
                             </div>
                         </div>
