@@ -101,9 +101,20 @@ export default function Profile() {
         
         console.log('Submitting profile with data:', data);
         
-        post('/settings/profile', {
-            forceFormData: true,
+        // Use POST with _method override for file uploads
+        const formData = new FormData();
+        formData.append('_method', 'POST');
+        formData.append('name', data.name);
+        formData.append('email', data.email);
+        formData.append('country_code', data.country_code);
+        formData.append('phone_number', data.phone_number);
+        if (data.avatar) {
+            formData.append('avatar', data.avatar);
+        }
+        
+        router.post('/settings/profile', formData, {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: (page) => {
                 console.log('Profile update success:', page);
                 toast({
