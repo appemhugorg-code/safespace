@@ -24,6 +24,7 @@ class User extends Authenticatable // implements MustVerifyEmail // Disabled unt
         'name',
         'email',
         'password',
+        'avatar',
         'status',
         'guardian_id',
         'terms_accepted',

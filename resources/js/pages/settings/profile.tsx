@@ -1,6 +1,6 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
-import { User, Phone, Mail, Shield, Save } from 'lucide-react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { useState, useRef } from 'react';
+import { User, Phone, Mail, Shield, Save, Camera, CheckCircle, AlertCircle } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,14 @@ export default function Profile() {
 
     const [countryCode, setCountryCode] = useState(user.country_code || '+256');
     const [phoneNumber, setPhoneNumber] = useState(user.phone_number || '');
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(
+        user.avatar ? `/storage/${user.avatar}` : null
+    );
+    const [sendingVerification, setSendingVerification] = useState(false);
+    const [sendingPhoneVerification, setSendingPhoneVerification] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, patch, processing, errors, reset } = useForm<ProfileData>({
+    const { data, setData, post, processing, errors, reset } = useForm<ProfileData & { avatar?: File }>({
         name: user.name || '',
         email: user.email || '',
         country_code: user.country_code || '+256',
@@ -34,17 +40,81 @@ export default function Profile() {
         phone_verified_at: user.phone_verified_at,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        patch(route('profile.update'), {
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('avatar', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const sendEmailVerification = () => {
+        setSendingVerification(true);
+        router.post('/email/verification-notification', {}, {
+            preserveScroll: true,
             onSuccess: () => {
+                toast({
+                    title: "Verification email sent",
+                    description: "Please check your email for the verification link.",
+                });
+                setSendingVerification(false);
+            },
+            onError: () => {
+                toast({
+                    title: "Error",
+                    description: "Failed to send verification email. Please try again.",
+                    variant: "destructive",
+                });
+                setSendingVerification(false);
+            },
+        });
+    };
+
+    const sendPhoneVerification = () => {
+        setSendingPhoneVerification(true);
+        router.post('/settings/profile/send-phone-verification', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast({
+                    title: "Verification code sent",
+                    description: "Please check your phone for the verification code.",
+                });
+                setSendingPhoneVerification(false);
+            },
+            onError: () => {
+                toast({
+                    title: "Error",
+                    description: "Failed to send verification code. Please try again.",
+                    variant: "destructive",
+                });
+                setSendingPhoneVerification(false);
+            },
+        });
+    };
+
+    const handleSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        
+        console.log('Submitting profile with data:', data);
+        
+        post('/settings/profile', {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                console.log('Profile update success:', page);
                 toast({
                     title: "Profile updated",
                     description: "Your profile information has been updated successfully.",
                 });
+                // Reload to get updated user data with avatar
+                router.reload({ only: ['auth'] });
             },
-            onError: () => {
+            onError: (errors) => {
+                console.error('Profile update errors:', errors);
                 toast({
                     title: "Error",
                     description: "There was an error updating your profile. Please try again.",
@@ -71,6 +141,65 @@ export default function Profile() {
                 </div>
 
                 <div className="grid gap-6">
+                    {/* Avatar Upload */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Camera className="h-5 w-5" />
+                                Profile Picture
+                            </CardTitle>
+                            <CardDescription>
+                                Upload a profile picture to personalize your account.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-6">
+                                <div className="relative">
+                                    <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                                        {avatarPreview ? (
+                                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-12 h-12 text-gray-400" />
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                                    >
+                                        <Camera className="w-4 h-4" />
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        className="hidden"
+                                    />
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        JPG, PNG or GIF. Max size 2MB.
+                                    </p>
+                                    {errors.avatar && (
+                                        <p className="text-sm text-red-600">{errors.avatar}</p>
+                                    )}
+                                    {data.avatar && (
+                                        <Button
+                                            type="button"
+                                            onClick={handleSubmit}
+                                            disabled={processing}
+                                            size="sm"
+                                        >
+                                            <Save className="w-4 h-4 mr-2" />
+                                            {processing ? 'Saving...' : 'Save'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Basic Information */}
                     <Card>
                         <CardHeader>
@@ -114,13 +243,26 @@ export default function Profile() {
                                         <InputError message={errors.email} />
                                         {user.email_verified_at ? (
                                             <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                                                <Shield className="h-3 w-3" />
+                                                <CheckCircle className="h-4 w-4" />
                                                 Email verified
                                             </p>
                                         ) : (
-                                            <p className="text-sm text-amber-600 dark:text-amber-400">
-                                                Email not verified
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                    <AlertCircle className="h-4 w-4" />
+                                                    Email not verified
+                                                </p>
+                                                <Button
+                                                    type="button"
+                                                    variant="link"
+                                                    size="sm"
+                                                    onClick={sendEmailVerification}
+                                                    disabled={sendingVerification}
+                                                    className="h-auto p-0 text-blue-600"
+                                                >
+                                                    {sendingVerification ? 'Sending...' : 'Send verification email'}
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -167,16 +309,24 @@ export default function Profile() {
 
                                 {data.phone_verified_at ? (
                                     <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                                        <Shield className="h-3 w-3" />
+                                        <CheckCircle className="h-4 w-4" />
                                         Phone number verified
                                     </p>
                                 ) : data.phone_number ? (
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-amber-600 dark:text-amber-400">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <AlertCircle className="h-4 w-4" />
                                             Phone number not verified
                                         </p>
-                                        <Button type="button" variant="outline" size="sm">
-                                            Send Verification Code
+                                        <Button 
+                                            type="button" 
+                                            variant="link" 
+                                            size="sm"
+                                            onClick={sendPhoneVerification}
+                                            disabled={sendingPhoneVerification}
+                                            className="h-auto p-0 text-blue-600"
+                                        >
+                                            {sendingPhoneVerification ? 'Sending...' : 'Send verification code'}
                                         </Button>
                                     </div>
                                 ) : null}
