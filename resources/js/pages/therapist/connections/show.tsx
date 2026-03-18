@@ -233,7 +233,7 @@ export default function TherapistConnectionShow({ connection }: Props) {
 
                 {/* Tabs for detailed information */}
                 <Tabs defaultValue="overview" className="animate-scale-in">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList>
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         {isChildConnection && <TabsTrigger value="mood">Mood Data</TabsTrigger>}
                         <TabsTrigger value="appointments">Sessions</TabsTrigger>
@@ -250,7 +250,7 @@ export default function TherapistConnectionShow({ connection }: Props) {
                                         <div>
                                             <h4 className="font-semibold mb-2">Therapeutic Progress</h4>
                                             <div className="space-y-2 text-sm">
-                                                <p>Total mood entries: {connection.child_data.mood_data.recent_moods.length}</p>
+                                                <p>Total mood entries: {connection.child_data.mood_data.total_entries}</p>
                                                 <p>Current streak: {connection.child_data.mood_data.streak} days</p>
                                                 <div className="flex items-center gap-2">
                                                     <span>Mood trend:</span>
@@ -309,11 +309,11 @@ export default function TherapistConnectionShow({ connection }: Props) {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {connection.child_data?.mood_data.recent_moods.length ? (
+                                    {connection.child_data?.mood_data.total_entries ? (
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="flex gap-2">
-                                                    {connection.child_data.mood_data.recent_moods.slice(0, 7).map((mood, index) => (
+                                                    {connection.child_data.mood_data.recent_entries.slice(0, 7).map((mood, index) => (
                                                         <div key={index} className="text-center">
                                                             <div className="text-2xl mb-1">{getMoodEmoji(mood.mood)}</div>
                                                             <div className="text-xs text-muted-foreground">
@@ -339,7 +339,7 @@ export default function TherapistConnectionShow({ connection }: Props) {
                                                 <div>
                                                     <p className="font-medium">Total Entries</p>
                                                     <p className="text-2xl font-bold text-blue-600">
-                                                        {connection.child_data.mood_data.recent_moods.length}
+                                                        {connection.child_data.mood_data.total_entries}
                                                     </p>
                                                     <p className="text-muted-foreground">mood logs</p>
                                                 </div>

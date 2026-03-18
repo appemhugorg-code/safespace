@@ -134,7 +134,7 @@ export default function TherapistScheduleAppointment({ patients }: Props) {
         <AppLayout>
             <Head title="Schedule Appointment" />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div>
                     <h1 className="text-3xl font-bold">Schedule Appointment</h1>
                     <p className="text-muted-foreground mt-1">

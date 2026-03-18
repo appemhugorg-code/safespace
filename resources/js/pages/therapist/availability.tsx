@@ -180,7 +180,7 @@ export default function TherapistAvailability({ availability, overrides }: Props
         <AppLayout>
             <Head title="Availability Management" />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold">Availability Management</h1>

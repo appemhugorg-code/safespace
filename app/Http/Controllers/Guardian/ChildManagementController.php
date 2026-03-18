@@ -166,7 +166,7 @@ class ChildManagementController extends Controller
         }
 
         return Inertia::render('guardian/edit-child', [
-            'child' => $child,
+            'child' => $child->load('roles'),
         ]);
     }
 

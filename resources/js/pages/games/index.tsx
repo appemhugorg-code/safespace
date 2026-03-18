@@ -64,7 +64,7 @@ export default function GamesIndex({ games, achievements, stats }: Props) {
         <AppLayout>
             <Head title="Games" />
 
-            <div className="py-12">
+            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-8">

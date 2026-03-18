@@ -88,7 +88,7 @@ export default function BookAppointment({ therapists, children }: Props) {
         <AppLayout>
             <Head title="Book Appointment" />
 
-            <div className="py-12">
+            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <Card>
                         <CardHeader>

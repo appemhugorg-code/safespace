@@ -108,7 +108,7 @@ export default function CreateConsultation({ guardians }: Props) {
         <AppLayout>
             <Head title="Schedule Consultation" />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/appointments">

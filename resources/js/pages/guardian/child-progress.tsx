@@ -63,7 +63,7 @@ export default function ChildProgress({ child, progressData }: Props) {
         <AppLayout>
             <Head title={`${child.name}'s Progress`} />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" onClick={() => window.history.back()}>
                         <ArrowLeft className="h-4 w-4 mr-2" />

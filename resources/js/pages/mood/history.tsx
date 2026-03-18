@@ -70,7 +70,7 @@ export default function MoodHistory({ moodLogs, moodStats, startDate, endDate }:
         <AppLayout>
             <Head title="Mood History" />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
                         <a href="/mood">

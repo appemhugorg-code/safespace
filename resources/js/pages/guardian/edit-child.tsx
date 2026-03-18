@@ -75,7 +75,7 @@ export default function EditChild({ child }: Props) {
         <AppLayout>
             <Head title={`Edit ${child.name}`} />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" onClick={handleCancel}>
@@ -175,7 +175,7 @@ export default function EditChild({ child }: Props) {
                     </div>
 
                     {/* Sidebar Information */}
-                    <div className="space-y-6">
+                    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                         {/* Current Status */}
                         <Card>
                             <CardHeader>
@@ -197,7 +197,7 @@ export default function EditChild({ child }: Props) {
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-muted-foreground">Account Type</span>
                                     <div className="flex gap-1">
-                                        {child.roles.map((role) => (
+                                        {(child.roles ?? []).map((role) => (
                                             <Badge key={role.name} variant="outline" className="text-xs">
                                                 {role.name}
                                             </Badge>

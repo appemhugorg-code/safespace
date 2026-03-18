@@ -100,7 +100,7 @@ export default function ChildDetails({ child, therapistAssignment }: Props) {
         <AppLayout>
             <Head title={`${child.name} - Child Details`} />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
@@ -269,7 +269,7 @@ export default function ChildDetails({ child, therapistAssignment }: Props) {
                     </div>
 
                     {/* Sidebar */}
-                    <div className="space-y-6">
+                    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                         {/* Account Summary */}
                         <Card>
                             <CardHeader>

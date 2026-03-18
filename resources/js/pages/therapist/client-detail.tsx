@@ -93,7 +93,7 @@ export default function ClientDetail({ client, appointments, stats }: Props) {
         <AppLayout>
             <Head title={`${client.name} - Client Details`} />
 
-            <div className="space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
