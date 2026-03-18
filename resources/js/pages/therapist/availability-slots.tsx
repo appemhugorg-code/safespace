@@ -370,18 +370,6 @@ export default function AvailabilitySlots({ slots }: Props) {
                     </CardContent>
                 </Card>
 
-                {/* Legend */}
-                <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-                        <span>Booked Slots</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
-                        <span>Available Slots</span>
-                    </div>
-                </div>
-
                 {/* Edit Slot Dialog */}
                 <Dialog open={!!editingSlot} onOpenChange={() => setEditingSlot(null)}>
                     <DialogContent>
