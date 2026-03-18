@@ -30,6 +30,9 @@ export default function Profile() {
     );
     const [sendingVerification, setSendingVerification] = useState(false);
     const [sendingPhoneVerification, setSendingPhoneVerification] = useState(false);
+    const [codeSent, setCodeSent] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
+    const [verifyingCode, setVerifyingCode] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<ProfileData & { avatar?: File }>({
@@ -79,19 +82,31 @@ export default function Profile() {
         router.post('/settings/profile/send-phone-verification', {}, {
             preserveScroll: true,
             onSuccess: () => {
-                toast({
-                    title: "Verification code sent",
-                    description: "Please check your phone for the verification code.",
-                });
+                toast({ title: "Verification code sent", description: "Please check your phone for the 6-digit code." });
+                setCodeSent(true);
                 setSendingPhoneVerification(false);
             },
             onError: () => {
-                toast({
-                    title: "Error",
-                    description: "Failed to send verification code. Please try again.",
-                    variant: "destructive",
-                });
+                toast({ title: "Error", description: "Failed to send verification code. Please try again.", variant: "destructive" });
                 setSendingPhoneVerification(false);
+            },
+        });
+    };
+
+    const submitVerificationCode = () => {
+        setVerifyingCode(true);
+        router.post('/settings/profile/verify-phone', { verification_code: verificationCode }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast({ title: "Phone verified", description: "Your phone number has been verified successfully." });
+                setCodeSent(false);
+                setVerificationCode('');
+                setVerifyingCode(false);
+                router.reload({ only: ['auth'] });
+            },
+            onError: () => {
+                toast({ title: "Invalid code", description: "The code you entered is incorrect or has expired.", variant: "destructive" });
+                setVerifyingCode(false);
             },
         });
     };
@@ -324,21 +339,44 @@ export default function Profile() {
                                         Phone number verified
                                     </p>
                                 ) : data.phone_number ? (
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                            <AlertCircle className="h-4 w-4" />
-                                            Phone number not verified
-                                        </p>
-                                        <Button 
-                                            type="button" 
-                                            variant="link" 
-                                            size="sm"
-                                            onClick={sendPhoneVerification}
-                                            disabled={sendingPhoneVerification}
-                                            className="h-auto p-0 text-blue-600"
-                                        >
-                                            {sendingPhoneVerification ? 'Sending...' : 'Send verification code'}
-                                        </Button>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                <AlertCircle className="h-4 w-4" />
+                                                Phone number not verified
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                size="sm"
+                                                onClick={sendPhoneVerification}
+                                                disabled={sendingPhoneVerification}
+                                                className="h-auto p-0 text-blue-600"
+                                            >
+                                                {sendingPhoneVerification ? 'Sending...' : codeSent ? 'Resend code' : 'Send verification code'}
+                                            </Button>
+                                        </div>
+                                        {codeSent && (
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={6}
+                                                    placeholder="Enter 6-digit code"
+                                                    value={verificationCode}
+                                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                                                    className="w-40"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    onClick={submitVerificationCode}
+                                                    disabled={verifyingCode || verificationCode.length !== 6}
+                                                >
+                                                    {verifyingCode ? 'Verifying...' : 'Verify'}
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : null}
 

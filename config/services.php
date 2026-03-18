@@ -42,6 +42,13 @@ return [
         'scheme' => 'https',
     ],
 
+    'tzk_sms' => [
+        'url'      => env('TZK_SMS_URL', 'http://sms.truekenya.com/apiq.php'),
+        'username' => env('TZK_SMS_USERNAME'),
+        'password' => env('TZK_SMS_PASSWORD'),
+        'sender'   => env('TZK_SMS_SENDER'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

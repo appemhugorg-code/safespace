@@ -115,8 +115,18 @@ class ProfileController extends Controller
             return back()->withErrors(['phone' => 'Phone number is already verified.']);
         }
 
-        // TODO: Implement SMS verification service
-        // For now, just return success message
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $request->session()->put('phone_verification_code', $code);
+        $request->session()->put('phone_verification_expires_at', now()->addMinutes(10)->timestamp);
+
+        $sms = app(\App\Services\SmsService::class);
+        $sent = $sms->send('0' . $user->phone_number, "Your SafeSpace verification code is: {$code}");
+
+        if (!$sent) {
+            return back()->withErrors(['phone' => 'Failed to send verification code. Please try again.']);
+        }
+
         return back()->with('success', 'Verification code sent to your phone number.');
     }
 
@@ -139,8 +149,18 @@ class ProfileController extends Controller
             return back()->withErrors(['phone' => 'Phone number is already verified.']);
         }
 
-        // TODO: Implement actual verification code checking
-        // For now, just mark as verified
+        $storedCode    = $request->session()->get('phone_verification_code');
+        $expiresAt     = $request->session()->get('phone_verification_expires_at');
+
+        if (!$storedCode || !$expiresAt || now()->timestamp > $expiresAt) {
+            return back()->withErrors(['verification_code' => 'Verification code has expired. Please request a new one.']);
+        }
+
+        if ($request->verification_code !== $storedCode) {
+            return back()->withErrors(['verification_code' => 'Invalid verification code.']);
+        }
+
+        $request->session()->forget(['phone_verification_code', 'phone_verification_expires_at']);
         $user->markPhoneAsVerified();
 
         return back()->with('success', 'Phone number verified successfully.');
