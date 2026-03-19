@@ -127,7 +127,7 @@ export default function CreateAppointment({ children, therapists }: Props) {
         <AppLayout>
             <Head title="Request Appointment" />
 
-            <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-6 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/appointments">
@@ -136,7 +136,7 @@ export default function CreateAppointment({ children, therapists }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">Request Appointment</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Request Appointment</h1>
                         <p className="text-muted-foreground">
                             Schedule a therapy session for your child
                         </p>

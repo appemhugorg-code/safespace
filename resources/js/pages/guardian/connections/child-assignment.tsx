@@ -104,10 +104,10 @@ export default function GuardianChildAssignment({ children, connected_therapists
         <AppLayout>
             <Head title="Assign Children to Therapists" />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Assign Children to Therapists</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Assign Children to Therapists</h1>
                         <p className="text-muted-foreground">
                             Assign your children to therapists you're already connected with
                         </p>

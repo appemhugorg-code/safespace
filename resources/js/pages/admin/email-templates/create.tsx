@@ -101,7 +101,7 @@ export default function CreateEmailTemplate({ template }: Props) {
         <AppLayout>
             <Head title={isEditing ? 'Edit Email Template' : 'Create Email Template'} />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="outline"
@@ -111,7 +111,7 @@ export default function CreateEmailTemplate({ template }: Props) {
                         Back to Templates
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">
                             {isEditing ? 'Edit Email Template' : 'Create Email Template'}
                         </h1>
                         <p className="text-muted-foreground">

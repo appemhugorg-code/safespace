@@ -104,7 +104,7 @@ export default function ClientDetail({ client, appointments, stats }: Props) {
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-3xl font-bold">{client.name}</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">{client.name}</h1>
                             <p className="text-muted-foreground">
                                 Client Details and Progress Overview
                             </p>

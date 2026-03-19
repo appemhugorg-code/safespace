@@ -132,7 +132,7 @@ export default function GuardianConnectionShow({ connection }: Props) {
         <AppLayout>
             <Head title={`Connection with ${connection.therapist.name}`} />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/guardian/connections">
@@ -141,7 +141,7 @@ export default function GuardianConnectionShow({ connection }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Connection Details</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Connection Details</h1>
                         <p className="text-muted-foreground">
                             Your therapeutic relationship with {connection.therapist.name}
                         </p>

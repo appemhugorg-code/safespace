@@ -79,7 +79,7 @@ export default function MoodHistory({ moodLogs, moodStats, startDate, endDate }:
                         </a>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">Mood History</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Mood History</h1>
                         <p className="text-muted-foreground">
                             Track your emotional journey over time
                         </p>

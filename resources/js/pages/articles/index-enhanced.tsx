@@ -254,7 +254,7 @@ export default function ArticlesIndex({
 
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Articles & Resources</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Articles & Resources</h1>
                         <p className="text-muted-foreground mt-1">
                             {isAdmin
                                 ? 'Review and manage articles submitted by therapists'

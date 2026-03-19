@@ -57,7 +57,7 @@ export default function ChildConnectionsIndex({ therapists, guardian, stats, enc
 
             <div className="space-y-6">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">My Helpers 🌟</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">My Helpers 🌟</h1>
                     <EncouragementMessage
                         message={encouragement_message}
                         type={therapists.length === 0 ? 'no-helpers' : 'default'}

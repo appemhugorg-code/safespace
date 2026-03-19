@@ -139,7 +139,7 @@ export default function GuardianAppointments({ appointments, children }: Props) 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Appointments</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Appointments</h1>
                         <p className="text-muted-foreground">
                             Manage therapy sessions for your children
                         </p>

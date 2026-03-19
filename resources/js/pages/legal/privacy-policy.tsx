@@ -8,10 +8,10 @@ export default function PrivacyPolicy() {
         <AppLayout>
             <Head title="Privacy Policy" />
 
-            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Privacy Policy</h1>
                         <p className="text-gray-600">
                             Last updated: {new Date().toLocaleDateString()}
                         </p>

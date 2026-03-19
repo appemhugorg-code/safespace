@@ -86,7 +86,7 @@ export default function AppointmentShow({ appointment, currentUser }: Props) {
                 </div>
 
                 <div>
-                    <h1 className="text-3xl font-bold">{appointmentTitle}</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">{appointmentTitle}</h1>
                     <p className="text-muted-foreground">
                         Appointment details and information
                     </p>

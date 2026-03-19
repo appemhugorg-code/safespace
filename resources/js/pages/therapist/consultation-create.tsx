@@ -117,7 +117,7 @@ export default function CreateConsultation({ guardians }: Props) {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">Schedule Parent Consultation</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Schedule Parent Consultation</h1>
                         <p className="text-muted-foreground">
                             Schedule a consultation meeting with a guardian
                         </p>

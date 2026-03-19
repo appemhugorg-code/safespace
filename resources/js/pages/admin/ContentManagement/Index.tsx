@@ -93,7 +93,7 @@ export default function ContentManagementIndex({ articles, analytics, filters }:
         <AppLayout>
             <Head title="Content Management" />
 
-            <div className="py-12">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {showSuccess && flash?.success && (
                         <Alert className="mb-6 bg-green-50 border-green-200">
@@ -105,7 +105,7 @@ export default function ContentManagementIndex({ articles, analytics, filters }:
                     )}
 
                     <div className="mb-6">
-                        <h1 className="text-3xl font-bold">Content Management</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Content Management</h1>
                         <p className="text-gray-600 mt-2">Review and manage articles submitted by therapists</p>
                     </div>
 

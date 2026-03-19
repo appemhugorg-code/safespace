@@ -90,7 +90,7 @@ export default function Groups({ userGroups, availableUsers, currentUser, canCre
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-3xl font-bold">Groups</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">Groups</h1>
                             <p className="text-muted-foreground">
                                 Join group conversations and connect with others
                             </p>

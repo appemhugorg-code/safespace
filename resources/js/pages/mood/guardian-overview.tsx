@@ -96,7 +96,7 @@ export default function GuardianOverview({ childrenMoodData, startDate, endDate,
                 <Head title="Mood Tracking Overview" />
                 <div className="container mx-auto p-6">
                     <div className="mb-6">
-                        <h1 className="text-3xl font-bold">Children's Mood Tracking</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Children's Mood Tracking</h1>
                         <p className="text-muted-foreground">Monitor your children's emotional well-being</p>
                     </div>
 
@@ -116,10 +116,10 @@ export default function GuardianOverview({ childrenMoodData, startDate, endDate,
     return (
         <AppLayout>
             <Head title="Mood Tracking Overview" />
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Children's Mood Tracking</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Children's Mood Tracking</h1>
                         <p className="text-muted-foreground">Monitor your children's emotional well-being</p>
                     </div>
                 </div>

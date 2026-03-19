@@ -72,7 +72,7 @@ export default function ChildProgress({ child, progressData }: Props) {
                     <div className="flex items-center gap-3">
                         <User className="h-8 w-8 text-primary" />
                         <div>
-                            <h1 className="text-3xl font-bold">{child.name}'s Progress</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">{child.name}'s Progress</h1>
                             <p className="text-muted-foreground">
                                 Overview of your child's activity and engagement
                             </p>

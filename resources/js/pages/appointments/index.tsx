@@ -158,7 +158,7 @@ export default function AppointmentsIndex({ appointments, currentUser, hasTherap
 
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">{getPageTitle()}</h1>
                         <p className="text-muted-foreground">
                             {getPageDescription()}
                         </p>

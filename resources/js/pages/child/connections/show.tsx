@@ -106,7 +106,7 @@ export default function ChildConnectionShow({ connection, communication_options,
                 </div>
 
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">
                         About {connection.therapist.friendly_name} ✨
                     </h1>
                     <p className="text-lg text-muted-foreground mt-2">

@@ -77,15 +77,16 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
             <Head title="My Mood" />
 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
+                <div className="max-w-2xl mx-auto space-y-6">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-primary">How are you feeling today?</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">How are you feeling today?</h1>
                     <p className="text-muted-foreground mt-2">
                         Take a moment to check in with yourself
                     </p>
                 </div>
 
                 {/* Mood Selector */}
-                <Card className="max-w-2xl mx-auto">
+                <Card>
                     <CardHeader className="text-center">
                         <CardTitle className="flex items-center justify-center gap-2">
                             <Heart className="h-6 w-6 text-red-500" />
@@ -148,7 +149,7 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
                 </Card>
 
                 {/* Stats and Recent Moods */}
-                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-6">
                     {/* Streak Card */}
                     <Card>
                         <CardHeader className="text-center">
@@ -217,7 +218,7 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
 
                 {/* Encouragement Message */}
                 {todayMood && (
-                    <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                    <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
                         <CardContent className="text-center py-6">
                             <h3 className="font-semibold text-blue-900 mb-2">
                                 Thank you for sharing! 💙
@@ -228,6 +229,7 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
                         </CardContent>
                     </Card>
                 )}
+                </div>{/* end max-w-2xl */}
             </div>
         </AppLayout>
     );

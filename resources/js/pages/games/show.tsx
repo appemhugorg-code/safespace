@@ -101,7 +101,7 @@ export default function ShowGame({ game, progress }: Props) {
         <AppLayout>
             <Head title={game.name} />
 
-            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-6">

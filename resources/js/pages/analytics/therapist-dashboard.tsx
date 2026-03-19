@@ -120,11 +120,11 @@ export default function TherapistAnalyticsDashboard({ analytics }: Props) {
         <AppLayout>
             <Head title="Content Analytics" />
 
-            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Content Analytics</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Content Analytics</h1>
                         <p className="text-gray-600">
                             Track how your clients engage with articles and games
                         </p>

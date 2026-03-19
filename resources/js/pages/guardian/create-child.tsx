@@ -55,7 +55,7 @@ export default function CreateChild() {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">Add Child Account</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Add Child Account</h1>
                         <p className="text-muted-foreground">
                             Create a SafeSpace account for your child
                         </p>

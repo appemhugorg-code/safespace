@@ -240,9 +240,9 @@ export default function CreateAppointment({ userRole, children, therapists, pati
         <AppLayout>
             <Head title="Schedule Appointment" />
 
-            <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-6 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div>
-                    <h1 className="text-3xl font-bold">Schedule Appointment</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">Schedule Appointment</h1>
                     <p className="text-muted-foreground mt-1">
                         {userRole === 'therapist' && 'Schedule a therapy session with your patients'}
                         {userRole === 'guardian' && 'Schedule a therapy session for your child'}

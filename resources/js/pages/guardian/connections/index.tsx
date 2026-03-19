@@ -109,10 +109,10 @@ export default function GuardianConnectionsIndex({ connections, pending_requests
         <AppLayout>
             <Head title="My Therapist Connections" />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">My Therapist Connections</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">My Therapist Connections</h1>
                         <p className="text-muted-foreground">
                             Manage your connections with therapists and view pending requests
                         </p>

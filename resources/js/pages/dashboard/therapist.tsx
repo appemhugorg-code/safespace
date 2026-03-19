@@ -108,7 +108,7 @@ export default function TherapistDashboard({ stats, upcomingAppointments, recent
 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div>
-                    <h1 className="text-3xl font-bold">Welcome back, Dr. 👋</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">Welcome back, Dr. 👋</h1>
                     <p className="text-muted-foreground">
                         Here's an overview of your appointments and client communications
                     </p>

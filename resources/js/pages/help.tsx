@@ -12,7 +12,7 @@ export default function Help() {
 
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div>
-                    <h1 className="text-3xl font-bold">Help & Support</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">Help & Support</h1>
                     <p className="text-muted-foreground">
                         Get help with using SafeSpace and find answers to common questions
                     </p>

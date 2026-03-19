@@ -242,7 +242,7 @@ export default function ConnectionManagement({ connections, statistics, therapis
             <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Connection Management</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Connection Management</h1>
                         <p className="text-muted-foreground">
                             Manage therapeutic relationships between therapists and clients
                         </p>

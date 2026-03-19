@@ -179,7 +179,7 @@ export default function TherapistAppointmentCreate({ clients, therapist }: Props
         <AppLayout>
             <Head title="Schedule Appointment" />
 
-            <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-6 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="flex justify-center">
                     <div className="w-full max-w-2xl">
                         <div className="flex items-center gap-4">
@@ -190,7 +190,7 @@ export default function TherapistAppointmentCreate({ clients, therapist }: Props
                                 </Link>
                             </Button>
                             <div>
-                                <h1 className="text-3xl font-bold">Schedule Appointment</h1>
+                                <h1 className="text-2xl sm:text-display font-semibold text-primary">Schedule Appointment</h1>
                                 <p className="text-muted-foreground">
                                     Create a new therapy session with your client
                                 </p>

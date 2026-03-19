@@ -112,7 +112,7 @@ export default function ChildDetails({ child, therapistAssignment }: Props) {
                     <div className="flex items-center gap-3">
                         <User className="h-8 w-8 text-primary" />
                         <div>
-                            <h1 className="text-3xl font-bold">{child.name}</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">{child.name}</h1>
                             <p className="text-muted-foreground">
                                 Child Account Details
                             </p>

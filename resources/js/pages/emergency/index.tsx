@@ -103,9 +103,9 @@ export default function Emergency({
         <AppLayout>
             <Head title="Emergency Help" />
 
-            <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-red-600">Emergency Help</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-red-600">Emergency Help</h1>
                     <p className="text-muted-foreground mt-2">
                         If you're in immediate danger or need urgent help
                     </p>

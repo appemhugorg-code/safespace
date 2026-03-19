@@ -116,11 +116,11 @@ export default function TherapistPendingRequests({ requests, stats }: Props) {
         <AppLayout>
             <Head title="Pending Connection Requests" />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 animate-fade-in">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="animate-slide-up">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-primary">Pending Requests</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">Pending Requests</h1>
                             <p className="text-muted-foreground">
                                 Review and respond to connection requests
                             </p>

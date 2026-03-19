@@ -53,15 +53,16 @@ export default function ChildDashboard({ stats, todayMood, recentMoods, upcoming
         <AppLayout>
             <Head title="My Dashboard" />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
-                <div className="text-center space-y-2 animate-slide-up">
-                    <h1 className="text-2xl sm:text-display text-primary font-semibold">Welcome back! 👋</h1>
-                    <p className="text-body text-muted-foreground px-4">
+            <div className="flex flex-col items-center w-full space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
+                <div className="w-full max-w-2xl text-center space-y-2 animate-slide-up">
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">Welcome back! 👋</h1>
+                    <p className="text-body text-muted-foreground text-center">
                         How are you feeling today?
                     </p>
                 </div>
 
                 {/* Today's Mood Check */}
+                <div className="w-full max-w-2xl space-y-6 sm:space-y-8">
                 <Card variant="elevated" spacing="spacious" className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 animate-scale-in" interactive>
                     <CardHeader className="text-center">
                         <CardTitle className="flex items-center justify-center gap-md text-blue-900">
@@ -73,7 +74,7 @@ export default function ChildDashboard({ stats, todayMood, recentMoods, upcoming
                         {todayMood ? (
                             <div className="animate-fade-in">
                                 <div className="text-5xl sm:text-6xl mb-4 animate-pulse-gentle">{todayMood.mood_emoji || '😊'}</div>
-                                <p className="text-lg sm:text-subheading font-semibold text-blue-900 mb-4 px-2">
+                                <p className="text-lg sm:text-subheading font-semibold text-blue-900 mb-4">
                                     You're feeling {todayMood.mood_display?.toLowerCase() || todayMood.mood || 'good'} today
                                 </p>
                                 {todayMood.notes && (
@@ -88,7 +89,7 @@ export default function ChildDashboard({ stats, todayMood, recentMoods, upcoming
                         ) : (
                             <div className="animate-fade-in">
                                 <div className="text-5xl sm:text-6xl mb-4 animate-pulse-gentle">😊</div>
-                                <p className="text-lg sm:text-subheading font-semibold text-blue-900 mb-6 px-2">
+                                <p className="text-lg sm:text-subheading font-semibold text-blue-900 mb-6">
                                     You haven't checked in today yet!
                                 </p>
                                 <Button size="lg" asChild>
@@ -317,6 +318,7 @@ export default function ChildDashboard({ stats, todayMood, recentMoods, upcoming
                         </p>
                     </CardContent>
                 </Card>
+                </div>{/* end max-w-2xl */}
             </div>
         </AppLayout>
     );

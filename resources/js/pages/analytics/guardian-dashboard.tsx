@@ -81,11 +81,11 @@ export default function GuardianAnalyticsDashboard({
         <AppLayout>
             <Head title="Family Analytics" />
 
-            <div className="p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Family Analytics</h1>
+                        <h1 className="text-2xl sm:text-display font-semibold text-primary">Family Analytics</h1>
                         <p className="text-gray-600">
                             Track your children's mental health journey and progress
                         </p>

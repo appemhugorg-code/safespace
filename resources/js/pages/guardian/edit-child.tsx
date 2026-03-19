@@ -85,7 +85,7 @@ export default function EditChild({ child }: Props) {
                     <div className="flex items-center gap-3">
                         <User className="h-8 w-8 text-primary" />
                         <div>
-                            <h1 className="text-3xl font-bold">Edit {child.name}</h1>
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">Edit {child.name}</h1>
                             <p className="text-muted-foreground">
                                 Update your child's account information
                             </p>

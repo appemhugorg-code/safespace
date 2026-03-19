@@ -106,7 +106,7 @@ export default function ConnectionDetail({ connection }: Props) {
                             Back to Connections
                         </Button>
                         <div>
-                            <h1 className="text-3xl font-bold">
+                            <h1 className="text-2xl sm:text-display font-semibold text-primary">
                                 {connection.therapist.name} ↔ {connection.client.name}
                             </h1>
                             <p className="text-muted-foreground">

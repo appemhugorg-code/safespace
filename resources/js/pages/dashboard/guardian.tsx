@@ -68,9 +68,9 @@ export default function GuardianDashboard({ stats, children, upcomingAppointment
         <AppLayout>
             <Head title="Guardian Dashboard" />
 
-            <div className="container-mobile space-y-6 sm:space-y-8 py-4 sm:py-6 lg:py-8 animate-fade-in">
+            <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-full overflow-x-hidden">
                 <div className="space-y-2 animate-slide-up">
-                    <h1 className="text-2xl sm:text-display font-bold">Welcome back! 👋</h1>
+                    <h1 className="text-2xl sm:text-display font-semibold text-primary">Welcome back! 👋</h1>
                     <p className="text-body text-muted-foreground px-2 sm:px-0">
                         Here's an overview of your children's progress and upcoming activities
                     </p>
