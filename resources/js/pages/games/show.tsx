@@ -219,14 +219,14 @@ function BreathingGame({ config, gameState, onComplete, onStateChange }: any) {
         : 'scale-75';
 
     return (
-        <div className="text-center">
-            <h3 className="text-xl font-semibold mb-4">
+        <div className="text-center pb-8">
+            <h3 className="text-xl font-semibold mb-8">
                 Breathing Exercise - Cycle {cycle + 1} of {config.cycles || 5}
             </h3>
 
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8 py-12">
                 <div className={`w-32 h-32 bg-blue-400 rounded-full transition-transform duration-1000 ${bubbleScale} flex items-center justify-center`}>
-                    <span className="text-white font-semibold">
+                    <span className="text-white font-semibold text-sm text-center px-2">
                         {phase === 'breathe-in' ? 'Breathe In' : 'Breathe Out'}
                     </span>
                 </div>

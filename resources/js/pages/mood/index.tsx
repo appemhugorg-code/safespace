@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 
 interface MoodLog {
@@ -24,17 +25,18 @@ interface Props {
 }
 
 const moodOptions = [
-    { value: 'very_sad', emoji: '😢', label: 'Very Sad', color: 'bg-red-500 hover:bg-red-600' },
-    { value: 'sad', emoji: '😔', label: 'Sad', color: 'bg-orange-500 hover:bg-orange-600' },
-    { value: 'neutral', emoji: '😐', label: 'Okay', color: 'bg-gray-500 hover:bg-gray-600' },
-    { value: 'happy', emoji: '😊', label: 'Happy', color: 'bg-green-500 hover:bg-green-600' },
-    { value: 'very_happy', emoji: '😄', label: 'Very Happy', color: 'bg-blue-500 hover:bg-blue-600' },
+    { value: 'very_sad', emoji: '😢', label: 'Very Sad', color: 'bg-red-500 hover:bg-red-600', selectedBorder: 'border-red-900' },
+    { value: 'sad', emoji: '😔', label: 'Sad', color: 'bg-orange-500 hover:bg-orange-600', selectedBorder: 'border-orange-900' },
+    { value: 'neutral', emoji: '😐', label: 'Okay', color: 'bg-gray-500 hover:bg-gray-600', selectedBorder: 'border-gray-900' },
+    { value: 'happy', emoji: '😊', label: 'Happy', color: 'bg-green-500 hover:bg-green-600', selectedBorder: 'border-green-900' },
+    { value: 'very_happy', emoji: '😄', label: 'Very Happy', color: 'bg-blue-500 hover:bg-blue-600', selectedBorder: 'border-blue-900' },
 ];
 
 export default function MoodTracking({ todayMood, recentMoods }: Props) {
     const [selectedMood, setSelectedMood] = useState(todayMood?.mood || '');
     const [notes, setNotes] = useState(todayMood?.notes || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
 
     const handleMoodSubmit = () => {
         if (!selectedMood) return;
@@ -46,9 +48,19 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
         }, {
             onSuccess: () => {
                 setIsSubmitting(false);
+                toast({
+                    title: 'Mood logged!',
+                    description: 'Your mood has been saved successfully.',
+                    variant: 'success',
+                });
             },
             onError: () => {
                 setIsSubmitting(false);
+                toast({
+                    title: 'Error',
+                    description: 'Failed to save your mood. Please try again.',
+                    variant: 'destructive',
+                });
             }
         });
     };
@@ -104,9 +116,9 @@ export default function MoodTracking({ todayMood, recentMoods }: Props) {
                                     key={mood.value}
                                     onClick={() => setSelectedMood(mood.value)}
                                     className={`
-                                        p-4 rounded-lg border-2 transition-all duration-200 text-white font-semibold
+                                        p-4 rounded-lg border-4 transition-all duration-200 text-white font-semibold
                                         ${selectedMood === mood.value
-                                            ? `${mood.color} border-white scale-105 shadow-lg`
+                                            ? `${mood.color} ${mood.selectedBorder} scale-105 shadow-lg ring-2 ring-offset-2 ring-offset-white ring-current`
                                             : `${mood.color} border-transparent hover:scale-105 hover:shadow-md`
                                         }
                                     `}
