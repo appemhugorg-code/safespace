@@ -139,7 +139,11 @@ class GroupController extends Controller
         // Load relationships for response
         $group->load(['creator', 'members']);
 
-        return new GroupResource($group);
+        if ($request->expectsJson()) {
+            return new GroupResource($group);
+        }
+
+        return redirect()->back()->with('success', 'Group updated successfully!');
     }
 
     /**

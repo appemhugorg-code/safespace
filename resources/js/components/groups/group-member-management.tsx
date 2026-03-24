@@ -10,7 +10,9 @@ import {
     Clock,
     CheckCircle,
     XCircle,
-    AlertTriangle
+    AlertTriangle,
+    Plus,
+    X
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -76,6 +78,7 @@ interface GroupMemberManagementProps {
     group: Group;
     currentUser: User;
     canManageMembers: boolean;
+    availableUsers?: User[];
     onMemberUpdate?: () => void;
 }
 
@@ -83,6 +86,7 @@ export default function GroupMemberManagement({
     group,
     currentUser,
     canManageMembers,
+    availableUsers = [],
     onMemberUpdate
 }: GroupMemberManagementProps) {
     const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
@@ -91,6 +95,8 @@ export default function GroupMemberManagement({
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<GroupMember | null>(null);
     const [loading, setLoading] = useState(false);
+    const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+    const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<User[]>([]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         action: '' as 'approve' | 'reject',
@@ -214,6 +220,30 @@ export default function GroupMemberManagement({
         }
     };
 
+    const addMembers = async () => {
+        if (selectedUsersToAdd.length === 0) return;
+        setLoading(true);
+        try {
+            for (const user of selectedUsersToAdd) {
+                await fetch(`/api/groups/${group.id}/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                    body: JSON.stringify({ user_id: user.id }),
+                });
+            }
+            setSelectedUsersToAdd([]);
+            setAddMemberDialogOpen(false);
+            onMemberUpdate?.();
+        } catch (error) {
+            console.error('Failed to add members:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getRoleBadgeColor = (roles: string[] = []) => {
         const role = roles[0];
         switch (role) {
@@ -249,13 +279,23 @@ export default function GroupMemberManagement({
             {/* Group Members */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        Group Members ({group.members.length})
-                    </CardTitle>
-                    <CardDescription>
-                        Manage group members and their roles
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="w-5 h-5" />
+                                Group Members ({group.members.length})
+                            </CardTitle>
+                            <CardDescription>
+                                Manage group members and their roles
+                            </CardDescription>
+                        </div>
+                        {canManageMembers && (
+                            <Button size="sm" onClick={() => setAddMemberDialogOpen(true)}>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Add Members
+                            </Button>
+                        )}
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
@@ -301,7 +341,7 @@ export default function GroupMemberManagement({
                                     </div>
                                 </div>
 
-                                {canManageMembers && (
+                                {canManageMembers && member.id !== group.creator.id && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="sm">
@@ -472,6 +512,83 @@ export default function GroupMemberManagement({
                             </Button>
                         </div>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Members Dialog */}
+            <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <UserPlus className="w-5 h-5" />
+                            Add Members
+                        </DialogTitle>
+                        <DialogDescription>
+                            Select users to add to {group.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {selectedUsersToAdd.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {selectedUsersToAdd.map(u => (
+                                    <Badge key={u.id} variant="secondary" className="flex items-center gap-1 pr-1">
+                                        {u.name}
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-4 w-4 p-0"
+                                            onClick={() => setSelectedUsersToAdd(prev => prev.filter(x => x.id !== u.id))}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </Button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="max-h-64 overflow-y-auto space-y-2">
+                            {availableUsers.filter(u => !selectedUsersToAdd.find(s => s.id === u.id)).length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    No users available to add.
+                                </p>
+                            ) : (
+                                availableUsers
+                                    .filter(u => !selectedUsersToAdd.find(s => s.id === u.id))
+                                    .map(u => (
+                                    <div key={u.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <span className="text-sm font-semibold text-primary">{u.name.charAt(0).toUpperCase()}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm">{u.name}</p>
+                                                <p className="text-xs text-muted-foreground">{u.email}</p>
+                                            </div>
+                                        </div>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => setSelectedUsersToAdd(prev => [...prev, u])}>
+                                            <Plus className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => { setAddMemberDialogOpen(false); setSelectedUsersToAdd([]); }}>
+                                Cancel
+                            </Button>
+                            <Button onClick={addMembers} disabled={loading || selectedUsersToAdd.length === 0}>
+                                {loading ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                ) : (
+                                    <UserPlus className="w-4 h-4 mr-2" />
+                                )}
+                                Add {selectedUsersToAdd.length > 0 ? `(${selectedUsersToAdd.length})` : ''}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
 

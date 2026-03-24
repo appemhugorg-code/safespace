@@ -40,7 +40,7 @@ export default function GroupCreationForm({
     const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
     const { toast } = useToast();
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         name: '',
         description: '',
         initial_members: [] as number[],
@@ -49,10 +49,12 @@ export default function GroupCreationForm({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post('/groups', {
-            ...data,
+        transform((formData) => ({
+            ...formData,
             initial_members: selectedMembers.map(member => member.id),
-        }, {
+        }));
+
+        post('/groups', {
             onSuccess: (page: any) => {
                 console.log('Group created successfully:', page);
 
@@ -66,9 +68,6 @@ export default function GroupCreationForm({
                 reset();
                 setSelectedMembers([]);
                 setOpen(false);
-
-                // Redirect to groups page to see the new group
-                window.location.href = '/messages/groups';
 
                 onGroupCreated?.(page);
             },

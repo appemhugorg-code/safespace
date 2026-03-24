@@ -73,7 +73,7 @@ export default function GroupSettings({
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
 
-        put(`/api/groups/${group.id}`, {
+        put(`/groups/${group.id}`, {
             onSuccess: (response) => {
                 setIsEditing(false);
                 onGroupUpdated?.(response.data);

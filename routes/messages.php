@@ -20,6 +20,7 @@ Route::middleware(['auth', 'active'])->group(function () { // Removed 'verified'
     Route::get('/messages/groups/{group}', [MessageController::class, 'groupConversation'])->name('messages.group-conversation');
     // Group creation web route
     Route::post('/groups', [\App\Http\Controllers\GroupController::class, 'store'])->name('groups.store');
+    Route::put('/groups/{group}', [\App\Http\Controllers\GroupController::class, 'update'])->name('groups.update');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
     Route::post('/messages/{message}/flag', [ContentModerationController::class, 'flagMessage'])->name('messages.flag');
     Route::get('/api/messages/unread-count', [MessageController::class, 'unreadCount'])->name('messages.unread-count');

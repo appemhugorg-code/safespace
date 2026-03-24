@@ -65,9 +65,10 @@ interface Props {
     group: Group;
     messages: Message[];
     currentUser: User;
+    availableUsers: User[];
 }
 
-export default function GroupConversationPage({ group, messages, currentUser }: Props) {
+export default function GroupConversationPage({ group, messages, currentUser, availableUsers }: Props) {
     const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const [leaveReason, setLeaveReason] = useState('');
@@ -481,6 +482,7 @@ export default function GroupConversationPage({ group, messages, currentUser }: 
                                 group={group}
                                 currentUser={currentUser}
                                 canManageMembers={canManageGroup()}
+                                availableUsers={availableUsers}
                                 onMemberUpdate={() => {
                                     // Refresh the page to get updated data
                                     window.location.reload();

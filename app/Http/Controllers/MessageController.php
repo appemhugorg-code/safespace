@@ -199,12 +199,22 @@ class MessageController extends Controller
         // Get user's groups
         $userGroups = $user->groups()->active()->get();
 
+        // Load group relationships before computing available users
+        $group->load(['members', 'creator']);
+
+        $memberIds = $group->members->pluck('id');
+
         return Inertia::render('messages/group-conversation', [
-            'group' => $group->load(['members', 'creator']),
+            'group' => $group,
             'messages' => $messages,
             'conversations' => $conversations,
             'userGroups' => $userGroups,
             'currentUser' => $user->load('roles'),
+            'availableUsers' => \App\Models\User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['guardian', 'child', 'therapist']);
+            })->where('status', 'active')
+              ->whereNotIn('id', $memberIds)
+              ->get(['id', 'name', 'email']),
         ]);
     }
 
