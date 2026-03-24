@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Users, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -51,14 +51,14 @@ interface Props {
 export default function Groups({ userGroups, availableUsers, currentUser, canCreateGroups }: Props) {
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [activeTab, setActiveTab] = useState('my-groups');
-    
-    // Debug logging
-    console.log('Groups page props:', { 
-        userGroupsCount: userGroups?.length || 0, 
-        userGroups, 
-        currentUser: currentUser?.name,
-        canCreateGroups 
-    });
+
+    // Keep selectedGroup in sync after Inertia partial reloads
+    useEffect(() => {
+        if (selectedGroup) {
+            const updated = userGroups.find(g => g.id === selectedGroup.id);
+            if (updated) setSelectedGroup(updated);
+        }
+    }, [userGroups]);
 
     const handleGroupCreated = (group: Group) => {
         // The group creation form will handle the refresh
@@ -255,9 +255,9 @@ export default function Groups({ userGroups, availableUsers, currentUser, canCre
                                         group={selectedGroup}
                                         currentUser={currentUser}
                                         canManageMembers={canManageGroup(selectedGroup)}
+                                        availableUsers={availableUsers.filter(u => !selectedGroup.members.find(m => m.id === u.id))}
                                         onMemberUpdate={() => {
-                                            // Refresh the page or update the group data
-                                            window.location.reload();
+                                            router.reload({ only: ['userGroups', 'availableUsers'] });
                                         }}
                                     />
                                 </TabsContent>

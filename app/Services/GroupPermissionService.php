@@ -49,7 +49,7 @@ class GroupPermissionService
      */
     public function canManageGroup(User $user, Group $group): bool
     {
-        return $user->hasRole('admin') || $group->hasAdmin($user);
+        return $user->hasRole('admin') || $group->hasAdmin($user) || $group->created_by === $user->id;
     }
 
     /**

@@ -536,22 +536,22 @@ class GroupController extends Controller
     /**
      * Remove a member from the group.
      */
-    public function removeMember(Request $request, Group $group, User $memberUser)
+    public function removeMember(Request $request, Group $group, User $user): \Illuminate\Http\JsonResponse
     {
-        $user = $request->user();
+        $authUser = $request->user();
 
         // Check if user can remove members from this group
-        if (! $this->groupPermissionService->canManageMembers($user, $group)) {
+        if (! $this->groupPermissionService->canManageMembers($authUser, $group)) {
             abort(403, 'You are not authorized to remove members from this group');
         }
 
         // Check if the user is actually a member
-        if (! $group->hasMember($memberUser)) {
+        if (! $group->hasMember($user)) {
             return response()->json(['message' => 'User is not a member of this group'], 422);
         }
 
         // Remove member from group
-        $group->removeMember($memberUser, $user, 'Removed by admin');
+        $group->removeMember($user, $authUser, 'Removed by group manager');
 
         return response()->json([
             'message' => 'Member removed successfully',

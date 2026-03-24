@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
+import { useToast } from '@/hooks/use-toast';
 import {
     Users,
     UserPlus,
@@ -97,6 +98,7 @@ export default function GroupMemberManagement({
     const [loading, setLoading] = useState(false);
     const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
     const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<User[]>([]);
+    const { toast } = useToast();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         action: '' as 'approve' | 'reject',
@@ -168,11 +170,29 @@ export default function GroupMemberManagement({
 
             if (response.ok) {
                 setRemoveDialogOpen(false);
+                const removedName = memberToRemove.name;
                 setMemberToRemove(null);
                 onMemberUpdate?.();
+                toast({
+                    title: 'Member removed',
+                    description: `${removedName} has been removed from the group.`,
+                    variant: 'success',
+                });
+            } else {
+                const data = await response.json().catch(() => ({}));
+                toast({
+                    title: 'Failed to remove member',
+                    description: data.message || 'Something went wrong. Please try again.',
+                    variant: 'destructive',
+                });
             }
         } catch (error) {
             console.error('Failed to remove member:', error);
+            toast({
+                title: 'Failed to remove member',
+                description: 'Something went wrong. Please try again.',
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }
@@ -237,6 +257,11 @@ export default function GroupMemberManagement({
             setSelectedUsersToAdd([]);
             setAddMemberDialogOpen(false);
             onMemberUpdate?.();
+            toast({
+                title: 'Members added',
+                description: `Successfully added ${selectedUsersToAdd.length} member${selectedUsersToAdd.length > 1 ? 's' : ''} to the group.`,
+                variant: 'success',
+            });
         } catch (error) {
             console.error('Failed to add members:', error);
         } finally {

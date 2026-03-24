@@ -136,11 +136,19 @@ class MessageController extends Controller
         // Get available users for group creation
         $availableUsers = collect();
         if ($user->hasAnyRole(['therapist', 'admin', 'guardian'])) {
-            $availableUsers = User::whereHas('roles', function ($query) {
-                $query->whereIn('name', ['guardian', 'child', 'therapist']);
+            $query = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['guardian', 'child', 'therapist']);
             })->where('status', 'active')
-                ->where('id', '!=', $user->id)
-                ->get();
+                ->where('id', '!=', $user->id);
+
+            if ($user->hasRole('therapist')) {
+                $connectedIds = \App\Models\TherapistClientConnection::where('therapist_id', $user->id)
+                    ->active()
+                    ->pluck('client_id');
+                $query->whereIn('id', $connectedIds);
+            }
+
+            $availableUsers = $query->get();
         }
 
         // Check if user can create groups
@@ -210,11 +218,22 @@ class MessageController extends Controller
             'conversations' => $conversations,
             'userGroups' => $userGroups,
             'currentUser' => $user->load('roles'),
-            'availableUsers' => \App\Models\User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['guardian', 'child', 'therapist']);
-            })->where('status', 'active')
-              ->whereNotIn('id', $memberIds)
-              ->get(['id', 'name', 'email']),
+            'availableUsers' => (function () use ($user, $memberIds) {
+                $query = \App\Models\User::whereHas('roles', function ($q) {
+                    $q->whereIn('name', ['guardian', 'child', 'therapist']);
+                })->where('status', 'active')
+                  ->whereNotIn('id', $memberIds)
+                  ->where('id', '!=', $user->id);
+
+                if ($user->hasRole('therapist')) {
+                    $connectedIds = \App\Models\TherapistClientConnection::where('therapist_id', $user->id)
+                        ->active()
+                        ->pluck('client_id');
+                    $query->whereIn('id', $connectedIds);
+                }
+
+                return $query->get(['id', 'name', 'email']);
+            })(),
         ]);
     }
 
