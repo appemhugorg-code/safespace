@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useForm } from '@inertiajs/react';
 import {
     Send,
     Users,
@@ -131,11 +130,8 @@ export default function GroupConversation({
         onConnectionStatusChange: handleConnectionStatusChange,
     });
 
-    const { data, setData, post, processing, reset, errors, clearErrors } = useForm({
-        content: '',
-        group_id: group.id,
-    });
-
+    const [content, setContent] = useState('');
+    const [processing, setProcessing] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
     const [sendSuccess, setSendSuccess] = useState(false);
     const [sendWarning, setSendWarning] = useState<string | null>(null);
@@ -148,180 +144,60 @@ export default function GroupConversation({
         scrollToBottom();
     }, [localMessages]);
 
-    // Real-time message listening for group messages
-    useEffect(() => {
-        console.log('Setting up group Echo listener for group:', group.id);
-
-        if (!window.Echo || !group) {
-            console.log('Echo not available or no group:', { echo: !!window.Echo, group: !!group });
-            return;
-        }
-
-        // Listen to group channel for group messages
-        const channelName = `group.${group.id}`;
-        console.log('Subscribing to group channel:', channelName);
-
-        const groupChannel = window.Echo.private(channelName);
-
-        // Test channel subscription
-        groupChannel.subscribed(() => {
-            console.log('Successfully subscribed to group channel:', channelName);
-        });
-
-        groupChannel.error((error: any) => {
-            console.error('Group channel subscription error:', error);
-            setConnectionStatus('disconnected');
-        });
-
-        const handleNewGroupMessage = (event: any) => {
-            console.log('Received new group message event:', event);
-
-            // Add message if it's for this group and not from current user (to avoid duplicates)
-            if (event.message.group.id === group.id) {
-                setLocalMessages(prev => {
-                    // Check if message already exists to prevent duplicates
-                    const messageExists = prev.some(msg => msg.id === event.message.id);
-                    if (messageExists) {
-                        console.log('Group message already exists, skipping');
-                        return prev;
-                    }
-
-                    console.log('Adding new group message to conversation');
-                    return [...prev, event.message];
-                });
-                scrollToBottom();
-            }
-        };
-
-        const handleMemberAdded = (event: any) => {
-            console.log('Member added to group:', event);
-            // You could update the members list here if needed
-        };
-
-        const handleMemberRemoved = (event: any) => {
-            console.log('Member removed from group:', event);
-            // You could update the members list here if needed
-        };
-
-        groupChannel.listen('.group-message.sent', handleNewGroupMessage);
-        groupChannel.listen('.group-member.added', handleMemberAdded);
-        groupChannel.listen('.group-member.removed', handleMemberRemoved);
-
-        // Connection status monitoring
-        if (window.Echo.connector?.pusher?.connection) {
-            const connection = window.Echo.connector.pusher.connection;
-
-            connection.bind('connected', () => {
-                console.log('WebSocket connected');
-                setConnectionStatus('connected');
-            });
-
-            connection.bind('disconnected', () => {
-                console.log('WebSocket disconnected');
-                setConnectionStatus('disconnected');
-            });
-
-            connection.bind('connecting', () => {
-                console.log('WebSocket reconnecting');
-                setConnectionStatus('reconnecting');
-            });
-
-            connection.bind('error', (error: any) => {
-                console.error('WebSocket error:', error);
-                setConnectionStatus('disconnected');
-            });
-        }
-
-        return () => {
-            console.log('Cleaning up group Echo listener');
-            groupChannel.stopListening('.group-message.sent');
-            groupChannel.stopListening('.group-member.added');
-            groupChannel.stopListening('.group-member.removed');
-        };
-    }, [group.id]);
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!data.content.trim() || processing) return;
+        if (!content.trim() || processing) return;
 
-        // Clear previous messages
         setSendError(null);
         setSendSuccess(false);
         setSendWarning(null);
-        clearErrors();
+        setProcessing(true);
 
-        console.log('Sending group message:', data.content, 'to group:', group.id);
+        try {
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ group_id: group.id, content: content, message_type: 'group' }),
+            });
 
-        post('/api/messages', {
-            preserveScroll: true,
-            onSuccess: (response: any) => {
-                console.log('Group message response:', response);
-
-                // Temporarily disable optimistic updates to test Echo
-                // TODO: Re-enable after confirming Echo is working
-                /*
-                // Add the message optimistically to show immediate feedback
-                // Check both props and flash for the message (Inertia can put it in either place)
-                const sentMessage = response.props?.message || response.props?.flash?.message;
+            if (response.ok) {
+                const json = await response.json();
+                const sentMessage = json.message;
                 if (sentMessage) {
-                    setLocalMessages(prev => {
-                        // Check if message already exists to prevent duplicates
-                        const messageExists = prev.some(msg => msg.id === sentMessage.id);
-                        if (!messageExists) {
-                            console.log('Adding sent group message optimistically');
-                            return [...prev, sentMessage];
-                        }
-                        return prev;
-                    });
+                    setLocalMessages(prev =>
+                        prev.some(m => m.id === sentMessage.id) ? prev : [...prev, sentMessage]
+                    );
                     scrollToBottom();
                 }
-                */
-
-                reset('content');
-
-                // Check if there's a warning (broadcast failed)
-                if (response.props?.flash?.warning) {
-                    setSendWarning(response.props.flash.warning);
-                    setTimeout(() => setSendWarning(null), 8000);
-                } else {
-                    setSendSuccess(true);
-                    setTimeout(() => setSendSuccess(false), 2000);
-                }
-
-                // Check for moderation notice
-                if (response.props?.moderation_notice) {
-                    setSendWarning(response.props.moderation_notice);
-                    setTimeout(() => setSendWarning(null), 10000);
-                }
-            },
-            onError: (errors) => {
-                console.error('Failed to send group message:', errors);
-
-                if (errors.content && errors.content.includes('inappropriate')) {
-                    setSendError('Your message contains inappropriate content and cannot be sent.');
-                } else if (errors.broadcast) {
-                    setSendWarning('Message saved but real-time delivery failed. Refreshing to show your message...');
-                } else {
-                    setSendError('Failed to send message. Please try again.');
-                }
-
-                // Clear messages after 5 seconds
-                setTimeout(() => {
-                    setSendError(null);
-                    setSendWarning(null);
-                }, 5000);
+                setContent('');
+                setSendSuccess(true);
+                setTimeout(() => setSendSuccess(false), 2000);
+            } else {
+                setSendError('Failed to send message. Please try again.');
+                setTimeout(() => setSendError(null), 5000);
             }
-        });
+        } catch {
+            setSendError('Failed to send message. Please try again.');
+            setTimeout(() => setSendError(null), 5000);
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const reportMessage = (messageId: number) => {
-        post(`/api/messages/${messageId}/flag`, {
-            data: { reason: 'Inappropriate content' },
-            preserveScroll: true,
-            onSuccess: () => {
-                // Message reported successfully
-            }
+        fetch(`/api/messages/${messageId}/flag`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            },
+            body: JSON.stringify({ reason: 'Inappropriate content' }),
         });
     };
 
@@ -523,30 +399,30 @@ export default function GroupConversation({
 
                                 {/* Message Content */}
                                 <div className="ml-8">
-                                    <div className="bg-muted p-3 rounded-lg max-w-2xl">
-                                        <p className="text-sm">{message.content}</p>
+                                    <div className="flex items-start gap-1 max-w-2xl">
+                                        <div className="bg-muted p-3 rounded-lg flex-1">
+                                            <p className="text-sm">{message.content}</p>
 
-                                        {message.is_flagged && (
-                                            <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
-                                                ⚠️ This message has been flagged for review
-                                            </div>
-                                        )}
-                                    </div>
+                                            {message.is_flagged && (
+                                                <div className="mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+                                                    ⚠️ This message has been flagged for review
+                                                </div>
+                                            )}
+                                        </div>
 
-                                    {/* Message Actions */}
-                                    {!isCurrentUser && (
-                                        <div className="flex items-center gap-2 mt-1">
+                                        {/* Message Actions */}
+                                        {!isCurrentUser && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground flex-shrink-0"
                                                     >
                                                         <MoreVertical className="h-3 w-3" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="start">
+                                                <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
                                                         onClick={() => reportMessage(message.id)}
                                                         className="text-red-600"
@@ -556,8 +432,8 @@ export default function GroupConversation({
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -570,10 +446,9 @@ export default function GroupConversation({
             <div className="border-t p-4">
                 <form onSubmit={handleSubmit} className="flex gap-2">
                     <Input
-                        value={data.content}
+                        value={content}
                         onChange={(e) => {
-                            setData('content', e.target.value);
-                            // Clear messages when user starts typing
+                            setContent(e.target.value);
                             if (sendError) setSendError(null);
                             if (sendWarning) setSendWarning(null);
                         }}
@@ -584,7 +459,7 @@ export default function GroupConversation({
                     />
                     <Button
                         type="submit"
-                        disabled={processing || !data.content.trim() || connectionStatus === 'disconnected'}
+                        disabled={processing || !content.trim() || connectionStatus === 'disconnected'}
                     >
                         {processing ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -613,12 +488,6 @@ export default function GroupConversation({
                     </div>
                 )}
 
-                {errors.content && (
-                    <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                        {errors.content}
-                    </div>
-                )}
-
                 {connectionStatus === 'disconnected' && (
                     <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
                         ⚠️ Connection lost. Messages will be sent when connection is restored.
@@ -631,7 +500,7 @@ export default function GroupConversation({
                         💡 All messages are monitored for safety. Be respectful and kind.
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        {data.content.length}/1000
+                        {content.length}/1000
                     </div>
                 </div>
             </div>

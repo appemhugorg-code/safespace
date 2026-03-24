@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
 import { Search, Users, UserPlus, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,8 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Group {
     id: number;
@@ -47,16 +46,15 @@ interface GroupSearchProps {
 }
 
 export default function GroupSearch({ onJoinRequest }: GroupSearchProps) {
+    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Group[]>([]);
     const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
     const [joinDialogOpen, setJoinDialogOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-
-    const { data, setData, post, processing, errors, reset } = useForm({
-        message: '',
-    });
+    const [message, setMessage] = useState('');
+    const [processing, setProcessing] = useState(false);
 
     // Load user's join requests on component mount
     useEffect(() => {
@@ -109,20 +107,38 @@ export default function GroupSearch({ onJoinRequest }: GroupSearchProps) {
         setJoinDialogOpen(true);
     };
 
-    const submitJoinRequest = (e: React.FormEvent) => {
+    const submitJoinRequest = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!selectedGroup) return;
 
-        post(`/api/groups/${selectedGroup.id}/join-request`, {
-            onSuccess: () => {
-                reset();
+        setProcessing(true);
+        try {
+            const response = await fetch(`/api/groups/${selectedGroup.id}/join-request`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            if (response.ok) {
+                toast({ title: 'Join request sent successfully', variant: 'success' });
+                setMessage('');
                 setJoinDialogOpen(false);
                 setSelectedGroup(null);
-                fetchJoinRequests(); // Refresh join requests
+                fetchJoinRequests();
                 onJoinRequest?.(selectedGroup.id);
-            },
-        });
+            } else {
+                const err = await response.json();
+                toast({ title: err.message || 'Failed to send request', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: 'Failed to send request', variant: 'destructive' });
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const getJoinRequestStatus = (groupId: number) => {
@@ -320,15 +336,11 @@ export default function GroupSearch({ onJoinRequest }: GroupSearchProps) {
                             <Label htmlFor="message">Message (Optional)</Label>
                             <Textarea
                                 id="message"
-                                value={data.message}
-                                onChange={(e) => setData('message', e.target.value)}
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
                                 placeholder="Tell the group admins why you'd like to join..."
                                 rows={3}
-                                className={errors.message ? 'border-red-500' : ''}
                             />
-                            {errors.message && (
-                                <p className="text-sm text-red-600 mt-1">{errors.message}</p>
-                            )}
                         </div>
 
                         <div className="flex justify-end gap-3">

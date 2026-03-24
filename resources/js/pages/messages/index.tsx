@@ -20,12 +20,20 @@ interface Message {
     is_read: boolean;
 }
 
+interface Group {
+    id: number;
+    name: string;
+    members: { id: number }[];
+    latest_message?: { content: string; sender: User; created_at: string } | null;
+}
+
 interface Props {
     conversations: Record<string, Message>;
     contacts: User[];
+    userGroups: Group[];
 }
 
-export default function MessagesIndex({ conversations, contacts }: Props) {
+export default function MessagesIndex({ conversations, contacts, userGroups }: Props) {
     const conversationList = Object.values(conversations);
 
     return (
@@ -98,7 +106,7 @@ export default function MessagesIndex({ conversations, contacts }: Props) {
                     </div>
 
                     {/* Contacts List */}
-                    <div>
+                    <div className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -136,6 +144,59 @@ export default function MessagesIndex({ conversations, contacts }: Props) {
                                                     </p>
                                                 </div>
                                                 <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Group Chats */}
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Users className="h-5 w-5" />
+                                            Group Chats
+                                        </CardTitle>
+                                        <CardDescription>Your group conversations</CardDescription>
+                                    </div>
+                                    <Link href="/messages/groups">
+                                        <Button variant="outline" size="sm">
+                                            <Plus className="h-4 w-4 mr-1" />
+                                            All Groups
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {userGroups.length === 0 ? (
+                                    <div className="text-center py-4">
+                                        <p className="text-muted-foreground text-sm">No group chats yet</p>
+                                        <Link href="/messages/groups" className="text-sm text-primary hover:underline mt-1 inline-block">
+                                            Browse groups
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {userGroups.map((group) => (
+                                            <Link
+                                                key={group.id}
+                                                href={`/messages/groups/${group.id}`}
+                                                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                    <Users className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium truncate">{group.name}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {group.latest_message
+                                                            ? `${group.latest_message.sender?.name ?? 'Unknown'}: ${group.latest_message.content}`
+                                                            : `${group.members.length} members`}
+                                                    </p>
+                                                </div>
                                             </Link>
                                         ))}
                                     </div>

@@ -40,7 +40,7 @@ class GroupResource extends JsonResource
                 return $latestMessage ? [
                     'id' => $latestMessage->id,
                     'content' => $latestMessage->content,
-                    'sender_name' => $latestMessage->sender->name,
+                    'sender' => $latestMessage->sender ? ['name' => $latestMessage->sender->name] : null,
                     'created_at' => $latestMessage->created_at,
                 ] : null;
             }),

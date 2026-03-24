@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
 import { useToast } from '@/hooks/use-toast';
 import {
     Users,
@@ -98,12 +97,10 @@ export default function GroupMemberManagement({
     const [loading, setLoading] = useState(false);
     const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
     const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<User[]>([]);
+    const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
+    const [reviewReason, setReviewReason] = useState('');
+    const [reviewProcessing, setReviewProcessing] = useState(false);
     const { toast } = useToast();
-
-    const { data, setData, post, processing, errors, reset } = useForm({
-        action: '' as 'approve' | 'reject',
-        reason: '',
-    });
 
     // Load join requests if user can manage members
     useEffect(() => {
@@ -126,28 +123,45 @@ export default function GroupMemberManagement({
 
     const handleReviewRequest = (request: JoinRequest, action: 'approve' | 'reject') => {
         setSelectedRequest(request);
-        setData('action', action);
+        setReviewAction(action);
+        setReviewReason('');
         setReviewDialogOpen(true);
     };
 
-    const submitReview = (e: React.FormEvent) => {
+    const submitReview = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!selectedRequest) return;
 
-        post(`/api/groups/${group.id}/join-requests/${selectedRequest.id}`, {
-            data: {
-                action: data.action,
-                reason: data.reason,
-            },
-            onSuccess: () => {
-                reset();
+        setReviewProcessing(true);
+        try {
+            const response = await fetch(`/api/groups/${group.id}/join-requests/${selectedRequest.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ action: reviewAction, reason: reviewReason }),
+            });
+
+            if (response.ok) {
+                toast({
+                    title: reviewAction === 'approve' ? 'Join request approved' : 'Join request rejected',
+                    variant: reviewAction === 'approve' ? 'success' : 'default',
+                });
                 setReviewDialogOpen(false);
                 setSelectedRequest(null);
                 fetchJoinRequests();
                 onMemberUpdate?.();
-            },
-        });
+            } else {
+                const err = await response.json();
+                toast({ title: err.message || 'Failed to process request', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: 'Failed to process request', variant: 'destructive' });
+        } finally {
+            setReviewProcessing(false);
+        }
     };
 
     const handleRemoveMember = (member: GroupMember) => {
@@ -488,10 +502,10 @@ export default function GroupMemberManagement({
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {data.action === 'approve' ? 'Approve' : 'Reject'} Join Request
+                            {reviewAction === 'approve' ? 'Approve' : 'Reject'} Join Request
                         </DialogTitle>
                         <DialogDescription>
-                            {data.action === 'approve'
+                            {reviewAction === 'approve'
                                 ? `Approve ${selectedRequest?.user.name}'s request to join the group?`
                                 : `Reject ${selectedRequest?.user.name}'s request to join the group?`
                             }
@@ -499,13 +513,13 @@ export default function GroupMemberManagement({
                     </DialogHeader>
 
                     <form onSubmit={submitReview} className="space-y-4">
-                        {data.action === 'reject' && (
+                        {reviewAction === 'reject' && (
                             <div>
                                 <Label htmlFor="reason">Reason for rejection (Optional)</Label>
                                 <Textarea
                                     id="reason"
-                                    value={data.reason}
-                                    onChange={(e) => setData('reason', e.target.value)}
+                                    value={reviewReason}
+                                    onChange={(e) => setReviewReason(e.target.value)}
                                     placeholder="Explain why this request is being rejected..."
                                     rows={3}
                                 />
@@ -517,23 +531,23 @@ export default function GroupMemberManagement({
                                 type="button"
                                 variant="outline"
                                 onClick={() => setReviewDialogOpen(false)}
-                                disabled={processing}
+                                disabled={reviewProcessing}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={processing}
-                                variant={data.action === 'reject' ? 'destructive' : 'default'}
+                                disabled={reviewProcessing}
+                                variant={reviewAction === 'reject' ? 'destructive' : 'default'}
                             >
-                                {processing ? (
+                                {reviewProcessing ? (
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                ) : data.action === 'approve' ? (
+                                ) : reviewAction === 'approve' ? (
                                     <CheckCircle className="w-4 h-4 mr-2" />
                                 ) : (
                                     <XCircle className="w-4 h-4 mr-2" />
                                 )}
-                                {data.action === 'approve' ? 'Approve Request' : 'Reject Request'}
+                                {reviewAction === 'approve' ? 'Approve Request' : 'Reject Request'}
                             </Button>
                         </div>
                     </form>

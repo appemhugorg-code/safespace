@@ -7,7 +7,7 @@ use App\Events\MessageSent;
 use App\Models\Group;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\ContentModerationService;
+use App\Services\ContentFilterService;
 use App\Services\GroupPermissionService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +16,7 @@ class MessageController extends Controller
 {
     public function __construct(
         private GroupPermissionService $groupPermissionService,
-        private ContentModerationService $contentModerationService,
+        private ContentFilterService $contentModerationService,
         private \App\Services\ConnectionPermissionService $connectionPermissionService
     ) {}
 
@@ -33,9 +33,16 @@ class MessageController extends Controller
         // Get available contacts based on user role
         $contacts = $this->getAvailableContacts($user);
 
+        // Get user's groups
+        $userGroups = $user->groups()->active()->with(['members', 'creator'])->get()->map(function ($group) {
+            $group->latest_message = $group->messages()->with('sender')->latest()->first();
+            return $group;
+        });
+
         return Inertia::render('messages/index', [
             'conversations' => $conversations,
             'contacts' => $contacts,
+            'userGroups' => $userGroups,
         ]);
     }
 
@@ -394,23 +401,6 @@ class MessageController extends Controller
             abort(403, 'You are not authorized to send messages to this group');
         }
 
-        // Check for content violations
-        if ($this->contentModerationService->violatesGroupRules($request->content, $group)) {
-            \Log::warning('Message content violates group rules', [
-                'sender_id' => $user->id,
-                'group_id' => $group->id,
-                'content_preview' => substr($request->content, 0, 50).'...',
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Your message contains inappropriate content and cannot be sent.',
-                ], 422);
-            }
-
-            return back()->withErrors(['content' => 'Your message contains inappropriate content and cannot be sent.']);
-        }
-
         // Create group message
         $message = Message::create([
             'sender_id' => $user->id,
@@ -426,7 +416,8 @@ class MessageController extends Controller
         ]);
 
         // Perform automatic content moderation
-        $wasModerated = $this->contentModerationService->moderateMessage($message);
+        $this->contentModerationService->autoFlagIfNeeded($message);
+        $wasModerated = $message->is_flagged;
 
         // Broadcast the message (even if flagged, but admins will be notified)
         $broadcastSuccess = $this->broadcastMessage($message);

@@ -197,7 +197,7 @@ export default function Groups({ userGroups, availableUsers, currentUser, canCre
 
                                                         {group.latest_message && (
                                                             <div className="bg-gray-50 p-2 rounded text-xs mb-3">
-                                                                <p className="font-medium">{group.latest_message.sender.name}:</p>
+                                                                <p className="font-medium">{group.latest_message.sender?.name ?? 'Unknown'}:</p>
                                                                 <p className="text-muted-foreground truncate">
                                                                     {group.latest_message.content}
                                                                 </p>

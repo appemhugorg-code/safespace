@@ -26,6 +26,7 @@ import AppLayout from '@/layouts/app-layout';
 import GroupConversation from '@/components/groups/group-conversation';
 import GroupMemberManagement from '@/components/groups/group-member-management';
 import GroupSettings from '@/components/groups/group-settings';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
     id: number;
@@ -69,6 +70,7 @@ interface Props {
 }
 
 export default function GroupConversationPage({ group, messages, currentUser, availableUsers }: Props) {
+    const { toast } = useToast();
     const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const [leaveReason, setLeaveReason] = useState('');
@@ -109,7 +111,7 @@ export default function GroupConversationPage({ group, messages, currentUser, av
             });
 
             if (response.ok) {
-                // Redirect to groups page
+                toast({ title: `You have left "${group.name}"`, variant: 'success' });
                 router.visit('/messages/groups');
             }
         } catch (error) {

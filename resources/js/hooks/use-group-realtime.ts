@@ -59,114 +59,74 @@ export function useGroupRealtime({
     }, [onConnectionStatusChange]);
 
     useEffect(() => {
-        if (!window.Echo || !groupId) {
-            console.log('Echo not available or no group ID:', { echo: !!window.Echo, groupId });
-            return;
-        }
+        let pollTimer: ReturnType<typeof setInterval> | undefined;
+        let teardown: (() => void) | undefined;
 
-        console.log('Setting up group real-time listener for group:', groupId);
+        const setup = (): boolean => {
+            if (!window.Echo || !groupId) return false;
 
-        const channelName = `group.${groupId}`;
-        const groupChannel = window.Echo.private(channelName);
+            const channelName = `group.${groupId}`;
+            const groupChannel = window.Echo.private(channelName);
 
-        // Track subscription status
-        groupChannel.subscribed(() => {
-            console.log('Successfully subscribed to group channel:', channelName);
-            setIsListening(true);
-            updateConnectionStatus('connected');
-        });
-
-        groupChannel.error((error: any) => {
-            console.error('Group channel subscription error:', error);
-            setIsListening(false);
-            updateConnectionStatus('disconnected');
-        });
-
-        // Handle new group messages
-        const handleNewGroupMessage = (event: any) => {
-            console.log('Received new group message event:', event);
-
-            if (event.message.group.id === groupId) {
-                onNewMessage?.(event.message);
-            }
-        };
-
-        // Handle member added events
-        const handleMemberAdded = (event: GroupMemberEvent) => {
-            console.log('Member added to group:', event);
-
-            if (event.group.id === groupId) {
-                onMemberAdded?.(event);
-            }
-        };
-
-        // Handle member removed events
-        const handleMemberRemoved = (event: GroupMemberEvent) => {
-            console.log('Member removed from group:', event);
-
-            if (event.group.id === groupId) {
-                onMemberRemoved?.(event);
-            }
-        };
-
-        // Set up event listeners
-        groupChannel.listen('.group-message.sent', handleNewGroupMessage);
-        groupChannel.listen('.group-member.added', handleMemberAdded);
-        groupChannel.listen('.group-member.removed', handleMemberRemoved);
-
-        // Connection status monitoring
-        if (window.Echo.connector?.pusher?.connection) {
-            const connection = window.Echo.connector.pusher.connection;
-
-            const handleConnected = () => {
-                console.log('WebSocket connected');
+            groupChannel.subscribed(() => {
+                setIsListening(true);
                 updateConnectionStatus('connected');
-            };
+            });
 
-            const handleDisconnected = () => {
-                console.log('WebSocket disconnected');
+            groupChannel.error(() => {
                 setIsListening(false);
                 updateConnectionStatus('disconnected');
+            });
+
+            const handleNewGroupMessage = (event: any) => {
+                if (event.message?.group?.id === groupId) onNewMessage?.(event.message);
+            };
+            const handleMemberAdded = (event: GroupMemberEvent) => {
+                if (event.group?.id === groupId) onMemberAdded?.(event);
+            };
+            const handleMemberRemoved = (event: GroupMemberEvent) => {
+                if (event.group?.id === groupId) onMemberRemoved?.(event);
             };
 
-            const handleConnecting = () => {
-                console.log('WebSocket reconnecting');
-                updateConnectionStatus('reconnecting');
-            };
+            groupChannel.listen('.group-message.sent', handleNewGroupMessage);
+            groupChannel.listen('.group-member.added', handleMemberAdded);
+            groupChannel.listen('.group-member.removed', handleMemberRemoved);
 
-            const handleError = (error: any) => {
-                console.error('WebSocket error:', error);
-                setIsListening(false);
-                updateConnectionStatus('disconnected');
-            };
+            const connection = window.Echo.connector?.pusher?.connection;
+            const handleConnected = () => updateConnectionStatus('connected');
+            const handleDisconnected = () => { setIsListening(false); updateConnectionStatus('disconnected'); };
+            const handleConnecting = () => updateConnectionStatus('reconnecting');
 
-            connection.bind('connected', handleConnected);
-            connection.bind('disconnected', handleDisconnected);
-            connection.bind('connecting', handleConnecting);
-            connection.bind('error', handleError);
+            if (connection) {
+                connection.bind('connected', handleConnected);
+                connection.bind('disconnected', handleDisconnected);
+                connection.bind('connecting', handleConnecting);
+            }
 
-            // Cleanup connection listeners
-            return () => {
-                console.log('Cleaning up group real-time listener');
+            teardown = () => {
                 groupChannel.stopListening('.group-message.sent');
                 groupChannel.stopListening('.group-member.added');
                 groupChannel.stopListening('.group-member.removed');
-
-                connection.unbind('connected', handleConnected);
-                connection.unbind('disconnected', handleDisconnected);
-                connection.unbind('connecting', handleConnecting);
-                connection.unbind('error', handleError);
-
+                if (connection) {
+                    connection.unbind('connected', handleConnected);
+                    connection.unbind('disconnected', handleDisconnected);
+                    connection.unbind('connecting', handleConnecting);
+                }
                 setIsListening(false);
             };
+
+            return true;
+        };
+
+        if (!setup()) {
+            pollTimer = setInterval(() => {
+                if (setup()) clearInterval(pollTimer);
+            }, 200);
         }
 
         return () => {
-            console.log('Cleaning up group real-time listener');
-            groupChannel.stopListening('.group-message.sent');
-            groupChannel.stopListening('.group-member.added');
-            groupChannel.stopListening('.group-member.removed');
-            setIsListening(false);
+            clearInterval(pollTimer);
+            teardown?.();
         };
     }, [groupId, currentUserId, onNewMessage, onMemberAdded, onMemberRemoved, updateConnectionStatus]);
 

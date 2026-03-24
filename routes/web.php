@@ -108,7 +108,7 @@ Route::get('/platform/google/connect', [\App\Http\Controllers\PlatformGoogleCont
 Route::get('/platform/google/callback', [\App\Http\Controllers\PlatformGoogleController::class, 'callback'])->name('platform.google.callback');
 
 // Broadcasting authentication for private channels
-Broadcast::routes(['middleware' => ['auth']]);
+Broadcast::routes(['middleware' => ['web', 'auth:sanctum']]);
 require __DIR__.'/admin.php';
 require __DIR__.'/guardian.php';
 require __DIR__.'/child.php';

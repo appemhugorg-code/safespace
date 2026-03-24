@@ -258,4 +258,53 @@ class ContentFilterService
     {
         return $this->settings;
     }
+
+    /**
+     * Check if a user can flag a message.
+     */
+    public function canFlagMessage(\App\Models\User $user, Message $message): bool
+    {
+        // Can't flag your own message
+        if ($message->sender_id === $user->id) {
+            return false;
+        }
+
+        // Must be a member of the group (for group messages) or participant in the conversation
+        if ($message->isGroupMessage()) {
+            return $message->group->hasMember($user);
+        }
+
+        return $message->sender_id === $user->id || $message->recipient_id === $user->id;
+    }
+
+    /**
+     * Get paginated flagged messages.
+     */
+    public function getFlaggedMessages(int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        return Message::where('is_flagged', true)
+            ->with(['sender', 'group'])
+            ->latest()
+            ->paginate($perPage);
+    }
+
+    /**
+     * Check if a user can moderate a group.
+     */
+    public function canModerateGroup(\App\Models\User $user, \App\Models\Group $group): bool
+    {
+        return $user->hasRole('admin') || $group->hasAdmin($user) || $group->created_by === $user->id;
+    }
+
+    /**
+     * Get paginated flagged messages for a specific group.
+     */
+    public function getFlaggedMessagesForGroup(\App\Models\Group $group, int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        return Message::where('group_id', $group->id)
+            ->where('is_flagged', true)
+            ->with(['sender'])
+            ->latest()
+            ->paginate($perPage);
+    }
 }
