@@ -303,7 +303,7 @@ export default function Welcome() {
                             </Button>
                         </div>
 
-                        <p className="text-blue-200 text-sm mt-6">
+                        <p className="text-blue-200 text-sm mt-6 text-center max-w-none">
                             Already have an account? <Link href={login()} className="text-white underline hover:no-underline">Sign in here</Link>
                         </p>
                     </div>
