@@ -1381,6 +1381,11 @@ dd {
   max-width: 70ch;
 }
 
+/* Allow full-width paragraphs when explicitly set */
+p.max-w-none {
+  max-width: none !important;
+}
+
 /* Ensure interactive elements are large enough */
 button,
 input,

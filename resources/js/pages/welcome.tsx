@@ -311,7 +311,7 @@ export default function Welcome() {
 
                 {/* Footer */}
                 <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-7xl mx-auto w-full">
                         <div className="flex flex-col md:flex-row justify-between items-center">
                             <div className="flex items-center gap-2 mb-4 md:mb-0">
                                 <span className="text-xl font-bold">SafeSpace</span>
@@ -326,10 +326,10 @@ export default function Welcome() {
                             </div>
                         </div>
 
-                        <div className="mt-8 pt-8 border-t border-gray-800 text-center">
-                            <p className="text-gray-400 text-sm">
-                                <strong className="text-red-400">Crisis Support:</strong> If you or someone you know is in immediate danger,
-                                please call 999 or contact the National Crisis Helpline at 999.
+                        <div className="mt-8 pt-8 border-t border-gray-800 text-center w-full">
+                            <p className="text-gray-400 text-sm w-full max-w-none">
+                                <strong className="text-red-400">Crisis Support:</strong>{' '}
+                                If you or someone you know is in immediate danger, please call 999 or contact the National Crisis Helpline at 999.
                             </p>
                         </div>
                     </div>
