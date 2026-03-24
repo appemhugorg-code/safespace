@@ -35,8 +35,15 @@ class MessageController extends Controller
 
         // Get user's groups
         $userGroups = $user->groups()->active()->with(['members', 'creator'])->get()->map(function ($group) {
-            $group->latest_message = $group->messages()->with('sender')->latest()->first();
-            return $group;
+            $latest = $group->messages()->with('sender')->latest()->first();
+            return array_merge($group->toArray(), [
+                'latest_message' => $latest ? [
+                    'id' => $latest->id,
+                    'content' => $latest->content,
+                    'created_at' => $latest->created_at,
+                    'sender' => $latest->sender ? ['name' => $latest->sender->name] : null,
+                ] : null,
+            ]);
         });
 
         return Inertia::render('messages/index', [
@@ -129,15 +136,15 @@ class MessageController extends Controller
             ->withCount('members')
             ->get()
             ->map(function ($group) {
-                // Get latest message for each group
-                $latestMessage = $group->messages()
-                    ->with('sender')
-                    ->latest()
-                    ->first();
-
-                $group->latest_message = $latestMessage;
-
-                return $group;
+                $latest = $group->messages()->with('sender')->latest()->first();
+                return array_merge($group->toArray(), [
+                    'latest_message' => $latest ? [
+                        'id' => $latest->id,
+                        'content' => $latest->content,
+                        'created_at' => $latest->created_at,
+                        'sender' => $latest->sender ? ['name' => $latest->sender->name] : null,
+                    ] : null,
+                ]);
             });
 
         // Get available users for group creation
